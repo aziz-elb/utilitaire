@@ -1,0 +1,494 @@
+{
+  "statut_projet": [
+    {
+      "id": "1",
+      "libelle": "Etudeee"
+    },
+    {
+      "libelle": "realisation",
+      "id": "2"
+    },
+    {
+      "libelle": "finish",
+      "id": "3"
+    },
+    {
+      "id": "3487",
+      "libelle": "statut 4"
+    }
+  ],
+  "type_projet": [
+    {
+      "id": "1",
+      "libelle": "TTM...",
+      "description": "Time To Market - Méthode rapide de développement",
+      "actif_yn": true
+    },
+    {
+      "id": "2",
+      "libelle": "AGILE",
+      "description": "Méthodologie Agile Scrum",
+      "actif_yn": true
+    },
+    {
+      "libelle": "financce",
+      "description": "financce ..",
+      "actif_yn": true,
+      "id": "a88d"
+    },
+    {
+      "libelle": "marketing",
+      "description": ".....",
+      "actif_yn": true,
+      "id": "b5c0"
+    }
+  ],
+  "type_etape": [
+    {
+      "libelle": "jalon",
+      "id": "1"
+    },
+    {
+      "libelle": "tache",
+      "id": "2"
+    }
+  ],
+  "statut_etape": [
+    {
+      "id": "1",
+      "libelle": "En cours"
+    },
+    {
+      "id": "2",
+      "libelle": "En attente"
+    },
+    {
+      "id": "3",
+      "libelle": "en debut"
+    },
+    {
+      "id": "4",
+      "libelle": "en dernier"
+    }
+  ],
+  "type_commentaire": [
+    {
+      "id": "2",
+      "description": "Problème"
+    },
+    {
+      "id": "1",
+      "description": "commentaire ..."
+    }
+  ],
+  "type_partie_prenante": [
+    {
+      "libelle": "owner",
+      "id": "1"
+    },
+    {
+      "id": "2",
+      "libelle": "MOA"
+    },
+    {
+      "id": "9ea0",
+      "libelle": "dfsdffdfx"
+    }
+  ],
+  "fonction": [
+    {
+      "id": "1",
+      "libelle": "Chef de projetttt"
+    },
+    {
+      "id": "2",
+      "libelle": "Développeur"
+    },
+    {
+      "libelle": "cheff de adommm",
+      "id": "5"
+    },
+    {
+      "id": "1e43",
+      "libelle": "fonctioneee"
+    },
+    {
+      "id": "8460",
+      "libelle": "zdgdfgdf"
+    }
+  ],
+  "entite": [
+    {
+      "id": "1",
+      "titre": "Direction Technique",
+      "description": "Gère les aspects techniques des projets"
+    },
+    {
+      "id": "2",
+      "titre": "Direction Financière",
+      "description": "Supervise le budget et les ressources financières"
+    },
+    {
+      "id": "18e5",
+      "titre": "Direction SI BACK office",
+      "description": "Cest lequipe qui gere toutes la partie hard"
+    }
+  ],
+  "type_membre": [
+    {
+      "libelle": "MOA",
+      "obligatoire_yn": true,
+      "id": "2"
+    },
+    {
+      "id": "1",
+      "libelle": "fffffff",
+      "obligatoire_yn": false
+    }
+  ],
+  "template_projet": [
+    {
+      "libelle": "te",
+      "version": "21",
+      "description": "fasdf",
+      "actif_yn": false,
+      "etapes": [
+        {
+          "id": "1750033759471",
+          "libelle": "etape te ",
+          "order": 1
+        },
+        {
+          "id": "1750033776547",
+          "libelle": "etape 3",
+          "order": 3
+        },
+        {
+          "id": "1750033770685",
+          "libelle": "etape te 2",
+          "order": 2
+        }
+      ],
+      "date_modification": "2025-06-16T14:41:35.879Z",
+      "id": "1ddd"
+    },
+    {
+      "libelle": "template 1",
+      "version": "1.2",
+      "description": "est une template tres interessant",
+      "actif_yn": true,
+      "etapes": [
+        {
+          "id": "1750034274592",
+          "libelle": "etape 1",
+          "order": 1
+        },
+        {
+          "id": "1750034285200",
+          "libelle": "etape 2",
+          "order": 2
+        }
+      ],
+      "date_modification": "2025-06-16T00:38:22.079Z",
+      "id": "7178"
+    },
+    {
+      "id": "ef94",
+      "libelle": "jhdkje",
+      "description": "edekde",
+      "version": "2",
+      "actif_yn": true,
+      "date_creation": "2025-06-16T14:25:29.967Z",
+      "date_modification": "2025-06-16T14:25:29.967Z"
+    }
+  ],
+  "etape_template": [
+    {
+      "id": "8bd7",
+      "libelle": "etape",
+      "description": "des",
+      "ordre": "1",
+      "fk_template_id": "1"
+    }
+  ],
+  "membre": [
+    {
+      "id": "1",
+      "keycloak_user_id": "a1b2c3d4-e5f6-7890-abcd-1234567890ef",
+      "fk_type_membre_id": "2",
+      "nom_prenom": "Amine Berrada",
+      "email": "amine.berrada@example.com",
+      "telephone": "+212600112233",
+      "fk_entite_id": "2",
+      "fk_fonction_id": "2",
+      "interne_yn": true,
+      "date_creation": "2025-06-01T09:15:00Z",
+      "profile_picture_url": "https://images.ctfassets.net/sh6goo9gw1hh6/2sNZtFAWOdP1lmQ33VwRN3/24e953b920a9cd0ff2e1d587742a2472/1-intro-photo-final.jpg?w=1200&h=992&fl=progressive&q=70&fm=jpg",
+      "actif_yn": false
+    },
+    {
+      "id": "2",
+      "keycloak_user_id": "f7e6d5c4-b3a2-1908-fedc-0987654321ba",
+      "fk_type_membre_id": "1",
+      "nom_prenom": "Sofia El Mansouri",
+      "email": "sofia.elmansouri@example.com",
+      "telephone": "+212611223344",
+      "fk_entite_id": "1",
+      "fk_fonction_id": "1",
+      "interne_yn": true,
+      "date_creation": "2025-05-20T14:30:00Z",
+      "profile_picture_url": "https://example.com/profiles/sofia.jpg",
+      "actif_yn": false
+    },
+    {
+      "id": "3",
+      "keycloak_user_id": "zasdfaq3rr32r23r",
+      "fk_type_membre_id": "2",
+      "nom_prenom": "lily mahrach",
+      "email": "loubnamahrach1@gmail.com",
+      "telephone": "0838973298",
+      "fk_entite_id": "1",
+      "fk_fonction_id": "1",
+      "interne_yn": true,
+      "date_creation": "Wed Jun 11 2025 16:48:03 GMT+0100 (GMT+01:00)",
+      "profile_picture_url": "https://idsb.tmgrup.coms.tr/ly/uploads/images/2023/11/14/301015.jpg",
+      "actif_yn": false
+    }
+  ],
+  "projet": [
+    {
+      "id": "2",
+      "titre": "Plateforme E-learning",
+      "description": "Mise en place d'une plateforme d'apprentissage en ligne pour les étudiants.",
+      "code": "ELEARN2025",
+      "fk_type_projet_id": "1",
+      "date_debut": "2025-03-01",
+      "date_fin": "2025-10-30",
+      "date_cible": "2025-11-15",
+      "fk_statut_projet_id": "2",
+      "progression_pct": 42,
+      "niveau_complexite": 3,
+      "documentation_deposee_yn": false,
+      "passation_terminee_yn": false,
+      "fk_createur_membre_id": "",
+      "date_creation": "2025-02-28T09:30:00Z",
+      "visibilite_yn": false
+    },
+    {
+      "id": "1",
+      "titre": "titere",
+      "description": "desc",
+      "code": "CDAFD2",
+      "fk_type_projet_id": "1",
+      "date_debut": "2025-06-13",
+      "date_fin": "2025-06-13",
+      "date_cible": "2025-06-11",
+      "fk_statut_projet_id": "1",
+      "progression_pct": 87,
+      "niveau_complexite": 5,
+      "documentation_deposee_yn": true,
+      "passation_terminee_yn": true,
+      "fk_createur_membre_id": "4",
+      "visibilite_yn": false
+    },
+    {
+      "id": "94fe",
+      "titre": "Projet 11",
+      "description": "My Descritption",
+      "code": "HADF_ASDF-dsf",
+      "fk_type_projet_id": "1",
+      "date_debut": "2025-06-27",
+      "date_fin": "2025-06-26",
+      "date_cible": "2025-06-26",
+      "fk_statut_projet_id": "1",
+      "progression_pct": 0,
+      "niveau_complexite": 1,
+      "date_creation": "2025-06-15T12:11:53.645Z",
+      "documentation_deposee_yn": false,
+      "passation_terminee_yn": false,
+      "visibilite_yn": false
+    },
+    {
+      "id": "7873",
+      "titre": "adfsdf",
+      "description": "",
+      "code": "",
+      "fk_type_projet_id": "",
+      "date_debut": "",
+      "date_fin": "",
+      "date_cible": "",
+      "fk_statut_projet_id": "",
+      "progression_pct": 0,
+      "niveau_complexite": 1,
+      "date_creation": "2025-06-15T12:12:07.839Z",
+      "documentation_deposee_yn": false,
+      "passation_terminee_yn": false,
+      "visibilite_yn": true
+    },
+    {
+      "id": "1048",
+      "titre": "fsfsfsf",
+      "description": "",
+      "code": "",
+      "fk_type_projet_id": "",
+      "date_debut": "",
+      "date_fin": "",
+      "date_cible": "",
+      "fk_statut_projet_id": "",
+      "progression_pct": 0,
+      "niveau_complexite": 1,
+      "date_creation": "2025-06-15T12:12:26.822Z",
+      "documentation_deposee_yn": false,
+      "passation_terminee_yn": false,
+      "visibilite_yn": true
+    },
+    {
+      "id": "839a",
+      "titre": "asdfasdf",
+      "description": "asdfdsf",
+      "code": "",
+      "fk_type_projet_id": "",
+      "date_debut": "",
+      "date_fin": "",
+      "date_cible": "",
+      "fk_statut_projet_id": "",
+      "progression_pct": 0,
+      "niveau_complexite": 1,
+      "date_creation": "2025-06-15T12:40:22.744Z",
+      "documentation_deposee_yn": false,
+      "passation_terminee_yn": false,
+      "visibilite_yn": true
+    },
+    {
+      "id": "1676",
+      "titre": "test",
+      "description": "test",
+      "code": "test",
+      "fk_type_projet_id": "1",
+      "date_debut": "2025-06-19",
+      "date_fin": "2025-07-03",
+      "date_cible": "2025-07-06",
+      "fk_statut_projet_id": "1",
+      "progression_pct": 0,
+      "niveau_complexite": 1,
+      "date_creation": "2025-06-16T14:23:47.189Z",
+      "documentation_deposee_yn": false,
+      "passation_terminee_yn": false,
+      "visibilite_yn": true
+    }
+  ],
+  "partie_prenante": [
+    {
+      "id": "1",
+      "fk_projet_id": "1",
+      "fk_type_partie_id": "1",
+      "fk_membre_id": "1"
+    },
+    {
+      "id": "2",
+      "fk_projet_id": "1",
+      "fk_type_partie_id": "3",
+      "fk_membre_id": "4"
+    },
+    {
+      "id": "3f94",
+      "fk_projet_id": "1",
+      "fk_type_partie_id": "3",
+      "fk_membre_id": "4"
+    }
+  ],
+  "commentaire_projet": [
+    {
+      "id": "1",
+      "commentaire": "Initial project review completed.",
+      "fk_projet_id": "1",
+      "fk_type_commentaire_id": "1",
+      "fk_createur_membre_id": "1",
+      "created_at": "2025-06-10T14:23:00Z",
+      "modificateur_membre_id": "1",
+      "updated_at": "2025-06-11T09:12:00Z"
+    },
+    {
+      "id": "2",
+      "commentaire": "Design changes suggested by the team.",
+      "fk_projet_id": "2",
+      "fk_type_commentaire_id": "2",
+      "fk_createur_membre_id": "2",
+      "created_at": "2025-06-11T11:45:00Z",
+      "modificateur_membre_id": "1",
+      "updated_at": "2025-06-11T11:45:00Z"
+    }
+  ],
+  "membre_projet": [
+    {
+      "id": "1",
+      "fk_projet_id": "1",
+      "fk_membre_id": "2",
+      "date_affectation": "2025-06-01",
+      "role_projet": "Développeur",
+      "est_responsable_yn": false
+    },
+    {
+      "id": "2",
+      "fk_projet_id": "1",
+      "fk_membre_id": "1",
+      "date_affectation": "2025-06-01",
+      "role_projet": "Chef de projet",
+      "est_responsable_yn": true
+    }
+  ],
+  "etape_projet": [
+    {
+      "id": "1",
+      "fk_projet_id": "2",
+      "titre": "Analyse des besoins",
+      "description": "Collecte et analyse des exigences du client.",
+      "progression_pct": 100,
+      "ordre_execution": 1,
+      "priorite": "Haute",
+      "date_debut": "2025-05-20",
+      "date_fin": "2025-05-25",
+      "fk_statut_id": "1",
+      "fk_type_etape_id": "2"
+    },
+    {
+      "id": "2",
+      "fk_projet_id": "2",
+      "titre": "Conception technique",
+      "description": "Création des diagrammes d'architecture et choix technologiques.",
+      "progression_pct": 60,
+      "ordre_execution": 2,
+      "priorite": "Moyenne",
+      "date_debut": "2025-05-26",
+      "date_fin": "2025-06-05",
+      "fk_statut_id": "2",
+      "fk_type_etape_id": "2"
+    }
+  ],
+  "users": [
+    {
+      "id": "1",
+      "email": "azizelabbassi20@gmail.com",
+      "password": "abcd123",
+      "nom": "el abbassi",
+      "prenom": "aziz"
+    },
+    {
+      "id": "2",
+      "email": "loubnamahrach1@gmail.com",
+      "password": "abcd123",
+      "nom": "mahrach",
+      "prenom": "loubna"
+    }
+  ],
+  "role": [
+    {
+      "id": "e8c6",
+      "libelle": "Chef de projet"
+    },
+    {
+      "id": "e592",
+      "libelle": "administrateur"
+    }
+  ]
+}

@@ -1,0 +1,909 @@
+{
+  "statut_projet": [
+    {
+      "libelle": "Réalisation",
+      "id": "2"
+    },
+    {
+      "libelle": "Terminé",
+      "id": "3"
+    },
+    {
+      "id": "4",
+      "libelle": "En pause"
+    },
+    {
+      "id": "5",
+      "libelle": "Annulé"
+    }
+  ],
+  "type_projet": [
+    {
+      "id": "1",
+      "libelle": "TTM",
+      "description": "Time To Market - Méthode rapide de développement",
+      "actif_yn": false
+    },
+    {
+      "libelle": "agile",
+      "description": "méthodologie agile scrum",
+      "actif_yn": false,
+      "id": "2"
+    },
+    {
+      "libelle": "Finance",
+      "description": "Projets financiers et comptables",
+      "actif_yn": false,
+      "id": "3"
+    },
+    {
+      "libelle": "Marketing",
+      "description": "Campagnes marketing et communication",
+      "actif_yn": true,
+      "id": "4"
+    },
+    {
+      "libelle": "RH",
+      "description": "Ressources humaines et formation",
+      "actif_yn": false,
+      "id": "5"
+    }
+  ],
+  "type_etape": [
+    {
+      "libelle": "Jalon",
+      "id": "1"
+    },
+    {
+      "libelle": "Tâche",
+      "id": "2"
+    },
+    {
+      "libelle": "Réunion",
+      "id": "3"
+    },
+    {
+      "libelle": "Validation",
+      "id": "4"
+    }
+  ],
+  "statut_etape": [
+    {
+      "id": "1",
+      "libelle": "En cours"
+    },
+    {
+      "id": "2",
+      "libelle": "En attente"
+    },
+    {
+      "id": "3",
+      "libelle": "Terminé"
+    },
+    {
+      "id": "4",
+      "libelle": "Reporté"
+    },
+    {
+      "id": "5",
+      "libelle": "Annulé"
+    }
+  ],
+  "type_commentaire": [
+    {
+      "id": "1",
+      "description": "Commentaire général"
+    },
+    {
+      "id": "2",
+      "description": "Problème"
+    },
+    {
+      "id": "3",
+      "description": "Suggestion"
+    },
+    {
+      "id": "4",
+      "description": "Validation"
+    }
+  ],
+  "type_partie_prenante": [
+    {
+      "libelle": "Propriétaire",
+      "id": "1"
+    },
+    {
+      "id": "2",
+      "libelle": "MOA"
+    },
+    {
+      "id": "3",
+      "libelle": "MOE"
+    },
+    {
+      "id": "4",
+      "libelle": "Expert métier"
+    },
+    {
+      "id": "5",
+      "libelle": "Sponsor"
+    }
+  ],
+  "fonction": [
+    {
+      "id": "1",
+      "libelle": "Chef de projet"
+    },
+    {
+      "id": "2",
+      "libelle": "Développeur"
+    },
+    {
+      "libelle": "Responsable administratif",
+      "id": "3"
+    },
+    {
+      "id": "4",
+      "libelle": "Directeur technique"
+    },
+    {
+      "id": "5",
+      "libelle": "Analyste fonctionnel"
+    },
+    {
+      "id": "6",
+      "libelle": "Designer UI/UX"
+    },
+    {
+      "id": "7",
+      "libelle": "Responsable qualité"
+    }
+  ],
+  "entite": [
+    {
+      "id": "1",
+      "titre": "Direction Technique",
+      "description": "Gère les aspects techniques des projets"
+    },
+    {
+      "id": "2",
+      "titre": "Direction Financière",
+      "description": "Supervise le budget et les ressources financières"
+    },
+    {
+      "id": "3",
+      "titre": "Direction Marketing",
+      "description": "Gère la communication et les campagnes marketing"
+    },
+    {
+      "id": "4",
+      "titre": "Direction RH",
+      "description": "Gère les ressources humaines et la formation"
+    },
+    {
+      "id": "5",
+      "titre": "Direction des Systèmes d'Information",
+      "description": "Gère l'infrastructure IT et les systèmes"
+    }
+  ],
+  "type_membre": [
+    {
+      "libelle": "Interne",
+      "obligatoire_yn": true,
+      "id": "1"
+    },
+    {
+      "id": "2",
+      "libelle": "Externe",
+      "obligatoire_yn": false
+    },
+    {
+      "id": "3",
+      "libelle": "Consultant",
+      "obligatoire_yn": false
+    }
+  ],
+  "template_projet": [
+    {
+      "libelle": "Template Agile Standard",
+      "version": "2.1",
+      "description": "Template pour les projets utilisant la méthodologie Agile",
+      "actif_yn": true,
+      "etapes": [
+        {
+          "id": "1750160777427",
+          "libelle": "sfasfads",
+          "order": 1
+        },
+        {
+          "id": "3",
+          "libelle": "Sprint 2 - Développement",
+          "order": 2
+        },
+        {
+          "id": "4",
+          "libelle": "Revue finale",
+          "order": 3
+        },
+        {
+          "id": "2",
+          "libelle": "Sprint 1 - Développement",
+          "order": 4
+        },
+        {
+          "id": "1",
+          "libelle": "Sprint 0 - Initialisation",
+          "order": 5
+        }
+      ],
+      "date_modification": "2025-06-21T21:00:42.312Z",
+      "id": "1"
+    },
+    {
+      "libelle": "template marketing",
+      "description": "template pour les campagnes marketing ..",
+      "version": "2.0",
+      "actif_yn": true,
+      "date_modification": "2025-06-21T19:47:46.406Z",
+      "id": "3"
+    },
+    {
+      "id": "edca",
+      "libelle": "asdsad",
+      "description": "asasadsadasd",
+      "version": "21",
+      "actif_yn": true,
+      "date_creation": "2025-06-21T19:38:51.565Z",
+      "date_modification": "2025-06-21T19:47:11.156Z"
+    }
+  ],
+  "etape_template": [
+    {
+      "id": "1",
+      "libelle": "Étape initiale",
+      "description": "Première étape du projet",
+      "ordre": "1",
+      "fk_template_id": "1"
+    },
+    {
+      "id": "2",
+      "libelle": "Étape de développement",
+      "description": "Phase de développement principal",
+      "ordre": "2",
+      "fk_template_id": "1"
+    }
+  ],
+  "membre": [
+    {
+      "keycloak_user_id": "a1b2c3d4-e5f6-7890-abcd-1234567890ef",
+      "fk_type_membre_id": "1",
+      "nom_prenom": "Karim El Fassi",
+      "email": "karim.elfassi@entreprise.ma",
+      "telephone": "+212612345678",
+      "fk_entite_id": "1",
+      "fk_fonction_id": "1",
+      "interne_yn": true,
+      "profile_picture_url": "https://example.com/profiles/karim.jpg",
+      "actif_yn": true,
+      "id": "1"
+    },
+    {
+      "id": "2",
+      "keycloak_user_id": "f7e6d5c4-b3a2-1908-fedc-0987654321ba",
+      "fk_type_membre_id": "1",
+      "nom_prenom": "Leila Benbrahim",
+      "email": "leila.benbrahim@entreprise.ma",
+      "telephone": "+212678901234",
+      "fk_entite_id": "2",
+      "fk_fonction_id": "3",
+      "interne_yn": true,
+      "date_creation": "2025-02-20T14:30:00Z",
+      "profile_picture_url": "https://example.com/profiles/leila.jpg",
+      "actif_yn": true
+    },
+    {
+      "id": "3",
+      "keycloak_user_id": "zasdfaq3rr32r23r",
+      "fk_type_membre_id": "1",
+      "nom_prenom": "Youssef Alaoui",
+      "email": "youssef.alaoui@entreprise.ma",
+      "telephone": "+212699887766",
+      "fk_entite_id": "1",
+      "fk_fonction_id": "2",
+      "interne_yn": true,
+      "date_creation": "2025-03-10T16:48:03Z",
+      "profile_picture_url": "https://example.com/profiles/youssef.jpg",
+      "actif_yn": true
+    },
+    {
+      "id": "4",
+      "keycloak_user_id": "qwerty1234567890",
+      "fk_type_membre_id": "1",
+      "nom_prenom": "Fatima Zahra El Amrani",
+      "email": "fatima.elamrani@entreprise.ma",
+      "telephone": "+212655443322",
+      "fk_entite_id": "3",
+      "fk_fonction_id": "6",
+      "interne_yn": true,
+      "date_creation": "2025-04-05T10:20:00Z",
+      "profile_picture_url": "https://example.com/profiles/fatima.jpg",
+      "actif_yn": true
+    },
+    {
+      "id": "5",
+      "keycloak_user_id": "poiuytrewq12345",
+      "fk_type_membre_id": "2",
+      "nom_prenom": "Mehdi Cherkaoui",
+      "email": "mehdi.cherkaoui@consultant.ma",
+      "telephone": "+212633221100",
+      "fk_entite_id": "5",
+      "fk_fonction_id": "5",
+      "interne_yn": false,
+      "date_creation": "2025-05-12T11:15:00Z",
+      "profile_picture_url": "https://example.com/profiles/mehdi.jpg",
+      "actif_yn": false
+    },
+    {
+      "id": "6",
+      "keycloak_user_id": "mnbvcxzlkjhgfdsa",
+      "fk_type_membre_id": "1",
+      "nom_prenom": "Nadia Bennis",
+      "email": "nadia.bennis@entreprise.ma",
+      "telephone": "+212677889900",
+      "fk_entite_id": "4",
+      "fk_fonction_id": "7",
+      "interne_yn": true,
+      "date_creation": "2025-06-01T08:45:00Z",
+      "profile_picture_url": "https://example.com/profiles/nadia.jpg",
+      "actif_yn": true
+    },
+    {
+      "id": "8d0a",
+      "keycloak_user_id": "f7e6d5c4-b3a2-1908-fedc-0987654321ba",
+      "fk_type_membre_id": "2",
+      "nom_prenom": "El Abbassi Aziz",
+      "email": "azizelabbassi20@gmail.com",
+      "telephone": "0838973298",
+      "fk_entite_id": "2",
+      "fk_fonction_id": "2",
+      "interne_yn": false,
+      "profile_picture_url": "",
+      "actif_yn": true,
+      "date_creation": "2025-06-18T21:30:51.253Z"
+    }
+  ],
+  "projet": [
+    {
+      "id": "1",
+      "titre": "Plateforme E-learning",
+      "description": "Mise en place d'une plateforme d'apprentissage en ligne pour les employés",
+      "code": "ELEARN2025",
+      "fk_type_projet_id": "2",
+      "date_debut": "2025-01-15",
+      "date_fin": "2025-06-30",
+      "date_cible": "2025-06-15",
+      "fk_statut_projet_id": "2",
+      "progression_pct": 75,
+      "niveau_complexite": 4,
+      "documentation_deposee_yn": true,
+      "passation_terminee_yn": false,
+      "fk_createur_membre_id": "1",
+      "date_creation": "2025-01-10T09:30:00Z",
+      "visibilite_yn": true
+    },
+    {
+      "titre": "Refonte Site Web Corporatif",
+      "description": "Modernisation du site web de l'entreprise avec nouvelle identité visuelle",
+      "code": "WEB2025",
+      "date_debut": "2025-02-01",
+      "date_fin": "2025-05-31",
+      "date_cible": "2025-05-15",
+      "fk_type_projet_id": "1",
+      "fk_statut_projet_id": "3",
+      "progression_pct": 11,
+      "actif_yn": true,
+      "id": "2"
+    },
+    {
+      "id": "3",
+      "titre": "Système de Gestion des Congés",
+      "description": "Développement d'une application interne de gestion des congés",
+      "code": "LEAVE2025",
+      "fk_type_projet_id": "2",
+      "date_debut": "2025-03-10",
+      "date_fin": "2025-07-31",
+      "date_cible": "2025-07-15",
+      "fk_statut_projet_id": "2",
+      "progression_pct": 45,
+      "niveau_complexite": 5,
+      "documentation_deposee_yn": false,
+      "passation_terminee_yn": false,
+      "fk_createur_membre_id": "3",
+      "date_creation": "2025-03-01T10:00:00Z",
+      "visibilite_yn": true
+    },
+    {
+      "id": "4",
+      "titre": "Campagne Marketing Été 2025",
+      "description": "Campagne promotionnelle pour les produits d'été",
+      "code": "SUMMER2025",
+      "fk_type_projet_id": "4",
+      "date_debut": "2025-04-01",
+      "date_fin": "2025-06-15",
+      "date_cible": "2025-06-01",
+      "fk_statut_projet_id": "1",
+      "progression_pct": 30,
+      "niveau_complexite": 2,
+      "documentation_deposee_yn": false,
+      "passation_terminee_yn": false,
+      "fk_createur_membre_id": "4",
+      "date_creation": "2025-03-20T16:30:00Z",
+      "visibilite_yn": true
+    },
+    {
+      "id": "5",
+      "titre": "Migration vers le Cloud",
+      "description": "Migration des serveurs locaux vers une infrastructure cloud",
+      "code": "CLOUD2025",
+      "fk_type_projet_id": "1",
+      "date_debut": "2025-05-01",
+      "date_fin": "2025-09-30",
+      "date_cible": "2025-09-15",
+      "fk_statut_projet_id": "1",
+      "progression_pct": 15,
+      "niveau_complexite": 5,
+      "documentation_deposee_yn": false,
+      "passation_terminee_yn": false,
+      "fk_createur_membre_id": "1",
+      "date_creation": "2025-04-15T11:20:00Z",
+      "visibilite_yn": true
+    },
+    {
+      "id": "6",
+      "titre": "Formation Agile",
+      "description": "Programme de formation aux méthodologies Agile pour les équipes",
+      "code": "AGILE2025",
+      "fk_type_projet_id": "5",
+      "date_debut": "2025-06-01",
+      "date_fin": "2025-06-30",
+      "date_cible": "2025-06-25",
+      "fk_statut_projet_id": "1",
+      "progression_pct": 10,
+      "niveau_complexite": 2,
+      "documentation_deposee_yn": false,
+      "passation_terminee_yn": false,
+      "fk_createur_membre_id": "6",
+      "date_creation": "2025-05-20T14:10:00Z",
+      "visibilite_yn": true
+    }
+  ],
+  "partie_prenante": [
+    {
+      "id": "1",
+      "fk_projet_id": "1",
+      "fk_type_partie_id": "1",
+      "fk_membre_id": "1"
+    },
+    {
+      "id": "2",
+      "fk_projet_id": "1",
+      "fk_type_partie_id": "2",
+      "fk_membre_id": "2"
+    },
+    {
+      "id": "3",
+      "fk_projet_id": "2",
+      "fk_type_partie_id": "1",
+      "fk_membre_id": "4"
+    },
+    {
+      "id": "4",
+      "fk_projet_id": "2",
+      "fk_type_partie_id": "5",
+      "fk_membre_id": "2"
+    },
+    {
+      "id": "5",
+      "fk_projet_id": "3",
+      "fk_type_partie_id": "1",
+      "fk_membre_id": "3"
+    },
+    {
+      "id": "6",
+      "fk_projet_id": "3",
+      "fk_type_partie_id": "4",
+      "fk_membre_id": "6"
+    },
+    {
+      "id": "7",
+      "fk_projet_id": "4",
+      "fk_type_partie_id": "1",
+      "fk_membre_id": "4"
+    },
+    {
+      "id": "8",
+      "fk_projet_id": "5",
+      "fk_type_partie_id": "1",
+      "fk_membre_id": "1"
+    },
+    {
+      "id": "9",
+      "fk_projet_id": "6",
+      "fk_type_partie_id": "1",
+      "fk_membre_id": "6"
+    }
+  ],
+  "commentaire_projet": [
+    {
+      "id": "1",
+      "commentaire": "Le backlog initial a été validé par le comité de direction.",
+      "fk_projet_id": "1",
+      "fk_type_commentaire_id": "4",
+      "fk_createur_membre_id": "1",
+      "created_at": "2025-01-20T14:23:00Z",
+      "modificateur_membre_id": "1",
+      "updated_at": "2025-01-20T14:23:00Z"
+    },
+    {
+      "id": "2",
+      "commentaire": "Problème avec l'intégration du module de paiement.",
+      "fk_projet_id": "1",
+      "fk_type_commentaire_id": "2",
+      "fk_createur_membre_id": "3",
+      "created_at": "2025-03-15T11:45:00Z",
+      "modificateur_membre_id": "1",
+      "updated_at": "2025-03-16T09:30:00Z"
+    },
+    {
+      "id": "3",
+      "commentaire": "La maquette finale a été approuvée par le client.",
+      "fk_projet_id": "2",
+      "fk_type_commentaire_id": "4",
+      "fk_createur_membre_id": "4",
+      "created_at": "2025-03-10T16:20:00Z",
+      "modificateur_membre_id": "4",
+      "updated_at": "2025-03-10T16:20:00Z"
+    },
+    {
+      "id": "4",
+      "commentaire": "Suggestion: Ajouter un dark mode à l'application.",
+      "fk_projet_id": "3",
+      "fk_type_commentaire_id": "3",
+      "fk_createur_membre_id": "4",
+      "created_at": "2025-04-05T14:15:00Z",
+      "modificateur_membre_id": "3",
+      "updated_at": "2025-04-06T10:45:00Z"
+    },
+    {
+      "id": "5",
+      "commentaire": "Le budget de la campagne doit être revu à la hausse.",
+      "fk_projet_id": "4",
+      "fk_type_commentaire_id": "2",
+      "fk_createur_membre_id": "2",
+      "created_at": "2025-04-20T10:30:00Z",
+      "modificateur_membre_id": "4",
+      "updated_at": "2025-04-21T11:20:00Z"
+    }
+  ],
+  "membre_projet": [
+    {
+      "id": "1",
+      "fk_projet_id": "1",
+      "fk_membre_id": "1",
+      "date_affectation": "2025-01-15",
+      "role_projet": "Chef de projet",
+      "est_responsable_yn": true
+    },
+    {
+      "id": "2",
+      "fk_projet_id": "1",
+      "fk_membre_id": "3",
+      "date_affectation": "2025-01-15",
+      "role_projet": "Développeur full-stack",
+      "est_responsable_yn": false
+    },
+    {
+      "id": "3",
+      "fk_projet_id": "2",
+      "fk_membre_id": "4",
+      "date_affectation": "2025-02-01",
+      "role_projet": "Chef de projet",
+      "est_responsable_yn": true
+    },
+    {
+      "id": "4",
+      "fk_projet_id": "2",
+      "fk_membre_id": "5",
+      "date_affectation": "2025-02-05",
+      "role_projet": "Consultant UX",
+      "est_responsable_yn": false
+    },
+    {
+      "id": "5",
+      "fk_projet_id": "3",
+      "fk_membre_id": "3",
+      "date_affectation": "2025-03-10",
+      "role_projet": "Chef de projet technique",
+      "est_responsable_yn": true
+    },
+    {
+      "id": "6",
+      "fk_projet_id": "3",
+      "fk_membre_id": "1",
+      "date_affectation": "2025-03-15",
+      "role_projet": "Architecte solution",
+      "est_responsable_yn": false
+    },
+    {
+      "id": "7",
+      "fk_projet_id": "4",
+      "fk_membre_id": "4",
+      "date_affectation": "2025-04-01",
+      "role_projet": "Responsable campagne",
+      "est_responsable_yn": true
+    },
+    {
+      "id": "8",
+      "fk_projet_id": "5",
+      "fk_membre_id": "1",
+      "date_affectation": "2025-05-01",
+      "role_projet": "Chef de projet infrastructure",
+      "est_responsable_yn": true
+    },
+    {
+      "id": "9",
+      "fk_projet_id": "6",
+      "fk_membre_id": "6",
+      "date_affectation": "2025-06-01",
+      "role_projet": "Responsable formation",
+      "est_responsable_yn": true
+    }
+  ],
+  "etape_projet": [
+    {
+      "id": "1",
+      "fk_projet_id": "1",
+      "titre": "Analyse des besoins",
+      "description": "Collecte et analyse des exigences fonctionnelles",
+      "progression_pct": 100,
+      "ordre_execution": 1,
+      "priorite": "Haute",
+      "date_debut": "2025-01-15",
+      "date_fin": "2025-01-22",
+      "fk_statut_id": "3",
+      "fk_type_etape_id": "1"
+    },
+    {
+      "id": "2",
+      "fk_projet_id": "1",
+      "titre": "Conception technique",
+      "description": "Architecture technique et choix des technologies",
+      "progression_pct": 100,
+      "ordre_execution": 2,
+      "priorite": "Haute",
+      "date_debut": "2025-01-23",
+      "date_fin": "2025-01-31",
+      "fk_statut_id": "3",
+      "fk_type_etape_id": "1"
+    },
+    {
+      "id": "3",
+      "fk_projet_id": "1",
+      "titre": "Développement module utilisateur",
+      "description": "Implémentation des fonctionnalités utilisateur",
+      "progression_pct": 80,
+      "ordre_execution": 3,
+      "priorite": "Moyenne",
+      "date_debut": "2025-02-01",
+      "date_fin": "2025-03-15",
+      "fk_statut_id": "1",
+      "fk_type_etape_id": "2"
+    },
+    {
+      "id": "4",
+      "fk_projet_id": "2",
+      "titre": "Brief créatif",
+      "description": "Définition de l'identité visuelle",
+      "progression_pct": 100,
+      "ordre_execution": 1,
+      "priorite": "Haute",
+      "date_debut": "2025-02-01",
+      "date_fin": "2025-02-07",
+      "fk_statut_id": "3",
+      "fk_type_etape_id": "1"
+    },
+    {
+      "id": "5",
+      "fk_projet_id": "2",
+      "titre": "Développement front-end",
+      "description": "Implémentation des maquettes",
+      "progression_pct": 100,
+      "ordre_execution": 2,
+      "priorite": "Haute",
+      "date_debut": "2025-02-10",
+      "date_fin": "2025-03-01",
+      "fk_statut_id": "3",
+      "fk_type_etape_id": "2"
+    },
+    {
+      "id": "6",
+      "fk_projet_id": "3",
+      "titre": "Analyse des processus RH",
+      "description": "Modélisation des processus de gestion des congés",
+      "progression_pct": 100,
+      "ordre_execution": 1,
+      "priorite": "Haute",
+      "date_debut": "2025-03-10",
+      "date_fin": "2025-03-20",
+      "fk_statut_id": "3",
+      "fk_type_etape_id": "1"
+    },
+    {
+      "id": "7",
+      "fk_projet_id": "3",
+      "titre": "Développement API",
+      "description": "Implémentation des services backend",
+      "progression_pct": 60,
+      "ordre_execution": 2,
+      "priorite": "Moyenne",
+      "date_debut": "2025-03-21",
+      "date_fin": "2025-05-15",
+      "fk_statut_id": "1",
+      "fk_type_etape_id": "2"
+    },
+    {
+      "id": "8",
+      "fk_projet_id": "4",
+      "titre": "Élaboration stratégie média",
+      "description": "Définition des canaux de communication",
+      "progression_pct": 100,
+      "ordre_execution": 1,
+      "priorite": "Haute",
+      "date_debut": "2025-04-01",
+      "date_fin": "2025-04-10",
+      "fk_statut_id": "3",
+      "fk_type_etape_id": "1"
+    },
+    {
+      "id": "9",
+      "fk_projet_id": "4",
+      "titre": "Création contenu",
+      "description": "Production des supports visuels et textuels",
+      "progression_pct": 40,
+      "ordre_execution": 2,
+      "priorite": "Moyenne",
+      "date_debut": "2025-04-11",
+      "date_fin": "2025-05-20",
+      "fk_statut_id": "1",
+      "fk_type_etape_id": "2"
+    },
+    {
+      "id": "10",
+      "fk_projet_id": "5",
+      "titre": "Audit infrastructure",
+      "description": "Évaluation de l'existant et des besoins",
+      "progression_pct": 100,
+      "ordre_execution": 1,
+      "priorite": "Haute",
+      "date_debut": "2025-05-01",
+      "date_fin": "2025-05-10",
+      "fk_statut_id": "3",
+      "fk_type_etape_id": "1"
+    },
+    {
+      "id": "11",
+      "fk_projet_id": "5",
+      "titre": "Migration bases de données",
+      "description": "Transfert des données vers le cloud",
+      "progression_pct": 20,
+      "ordre_execution": 2,
+      "priorite": "Critique",
+      "date_debut": "2025-05-11",
+      "date_fin": "2025-06-30",
+      "fk_statut_id": "1",
+      "fk_type_etape_id": "2"
+    },
+    {
+      "id": "12",
+      "fk_projet_id": "6",
+      "titre": "Élaboration programme",
+      "description": "Définition du contenu pédagogique",
+      "progression_pct": 100,
+      "ordre_execution": 1,
+      "priorite": "Haute",
+      "date_debut": "2025-06-01",
+      "date_fin": "2025-06-05",
+      "fk_statut_id": "3",
+      "fk_type_etape_id": "1"
+    },
+    {
+      "id": "13",
+      "fk_projet_id": "6",
+      "titre": "Session pilote",
+      "description": "Première session de formation test",
+      "progression_pct": 0,
+      "ordre_execution": 2,
+      "priorite": "Moyenne",
+      "date_debut": "2025-06-10",
+      "date_fin": "2025-06-12",
+      "fk_statut_id": "2",
+      "fk_type_etape_id": "3"
+    }
+  ],
+  "users": [
+    {
+      "id": "1",
+      "email": "karim.elfassi@entreprise.ma",
+      "password": "kef2025",
+      "nom": "El Fassi",
+      "prenom": "Karim"
+    },
+    {
+      "id": "2",
+      "email": "leila.benbrahim@entreprise.ma",
+      "password": "lbb2025",
+      "nom": "Benbrahim",
+      "prenom": "Leila"
+    },
+    {
+      "id": "3",
+      "email": "youssef.alaoui@entreprise.ma",
+      "password": "yaa2025",
+      "nom": "Alaoui",
+      "prenom": "Youssef"
+    },
+    {
+      "id": "4",
+      "email": "fatima.elamrani@entreprise.ma",
+      "password": "fea2025",
+      "nom": "El Amrani",
+      "prenom": "Fatima Zahra"
+    },
+    {
+      "id": "5",
+      "email": "mehdi.cherkaoui@consultant.ma",
+      "password": "mcc2025",
+      "nom": "Cherkaoui",
+      "prenom": "Mehdi"
+    },
+    {
+      "id": "6",
+      "email": "nadia.bennis@entreprise.ma",
+      "password": "nbb2025",
+      "nom": "Bennis",
+      "prenom": "Nadia"
+    },
+    {
+      "id": "7",
+      "email": "azizelabbassi20@gmail.com",
+      "password": "abcd1234",
+      "nom": "El Abbassi",
+      "prenom": "Aziz"
+    },
+    {
+      "id": "8",
+      "email": "loubnamahrach1@gmail.com",
+      "password": "abcd1234",
+      "nom": "Mahrach",
+      "prenom": "Loubna"
+    }
+  ],
+  "role": [
+    {
+      "id": "1",
+      "libelle": "Administrateur"
+    },
+    {
+      "id": "2",
+      "libelle": "Chef de projet"
+    },
+    {
+      "id": "3",
+      "libelle": "Utilisateur standard"
+    },
+    {
+      "id": "4",
+      "libelle": "Consultant"
+    }
+  ]
+}
