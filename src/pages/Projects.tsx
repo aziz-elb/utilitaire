@@ -7,7 +7,7 @@ import { ProjectCards } from "@/components/projects/ProjectCards";
 import { ProjectTable } from "@/components/projects/ProjectTable";
 import { ProjectDialogs } from "@/components/projects/ProjectDialogs";
 import ProjectFilters from "@/components/projects/ProjectFilters";
-import axios from "axios";
+import { getProjects, type Project } from "@/services/projectService";
 import ProjectConfig from "@/components/projects/ProjectConfig";
 
 export default function Projects() {
@@ -17,7 +17,7 @@ export default function Projects() {
   const [currentProject, setCurrentProject] = useState<any | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const [Projects, setProjects] = useState([]);
+  const [Projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [typeProjet, settypeProjet] = useState([]);
   const [statutProjet, setstatutProjet] = useState([]);
@@ -59,16 +59,16 @@ export default function Projects() {
   useEffect(() => {
     const fetchProjects = async () => {
       try {
-        const res_projet = await axios.get("http://localhost:8000/projet");
-        setProjects(res_projet.data);
-        const res_type_projet = await axios.get(
-          "http://localhost:8000/type_projet"
-        );
-        settypeProjet(res_type_projet.data);
-        const res_statut_projet = await axios.get(
-          "http://localhost:8000/statut_projet"
-        );
-        setstatutProjet(res_statut_projet.data);
+        const projets = await getProjects();
+        setProjects(projets);
+        // const res_type_projet = await api.get("/type_projet");
+        // settypeProjet(res_type_projet.data);
+        // const res_statut_projet = await api.get("/statut_projet");
+        // setstatutProjet(res_statut_projet.data);
+        
+        // Endpoints temporairement désactivés car ils n'existent pas
+        settypeProjet([]);
+        setstatutProjet([]);
       } catch (error) {
         console.error("Error fetching projects:", error);
       } finally {

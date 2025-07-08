@@ -214,7 +214,7 @@ export const ProjectDialogs = ({
             <Button variant="outline" onClick={() => setOpenAddDialog(false)}>
               Annuler
             </Button>
-            <Button onClick={handleAddProject}>Créer</Button>
+            <Button onClick={handleAddProject} className="inwi_btn">Créer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

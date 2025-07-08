@@ -28,14 +28,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Archive, Edit, Eye, MoreHorizontal, CirclePlus } from "lucide-react";
 import { Toaster, toast } from "sonner";
-import axios from "axios";
+import {
+  getRoles,
+  addRole,
+  updateRole,
+  deleteRole,
+  type Role as ServiceRole,
+  type RoleInput,
+} from "@/services/roleService";
 
-const API_URL = "http://localhost:8000/role";
-
-type Role = {
-  id: string;
-  libelle: string;
-};
+// Use the Role type from the service
+// type Role = {
+//   id: string;
+//   libelle: string;
+// };
+type Role = ServiceRole;
 
 export default function RoleCrud() {
   // État pour la liste des rôles
@@ -50,19 +57,20 @@ export default function RoleCrud() {
   const [currentRole, setCurrentRole] = useState<Role | null>(null);
 
   // États pour les champs du formulaire
-  const [libelle, setLibelle] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
 
   // Charger les rôles au montage du composant
   useEffect(() => {
-    fetchRoles();
+    fetchRolesList();
   }, []);
 
   // Récupérer la liste des rôles
-  const fetchRoles = async () => {
+  const fetchRolesList = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setRoles(response.data);
+      const data = await getRoles();
+      setRoles(data);
     } catch (error) {
       toast.error("Erreur lors du chargement des rôles");
       console.error(error);
@@ -73,7 +81,8 @@ export default function RoleCrud() {
 
   // Réinitialiser les champs du formulaire
   const resetForm = () => {
-    setLibelle("");
+    setName("");
+    setDescription("");
     setCurrentRole(null);
   };
 
@@ -92,7 +101,8 @@ export default function RoleCrud() {
   // Ouvrir la modale d'édition
   const handleEditClick = (role: Role) => {
     setCurrentRole(role);
-    setLibelle(role.libelle);
+    setName(role.name);
+    setDescription(role.description);
     setOpenEditDialog(true);
   };
 
@@ -105,10 +115,8 @@ export default function RoleCrud() {
   // Ajouter un nouveau rôle
   const handleAddRole = async () => {
     try {
-      const response = await axios.post(API_URL, {
-        libelle: libelle.trim(),
-      });
-      setRoles([...roles, response.data]);
+      await addRole({ name: name.trim(), description: description.trim() });
+      await fetchRolesList();
       setOpenAddDialog(false);
       resetForm();
       toast.success("Rôle ajouté avec succès");
@@ -121,15 +129,9 @@ export default function RoleCrud() {
   // Modifier un rôle existant
   const handleEditRole = async () => {
     if (!currentRole) return;
-
     try {
-      const response = await axios.put(`${API_URL}/${currentRole.id}`, {
-        libelle: libelle.trim(),
-      });
-      const updatedRoles = roles.map((role) =>
-        role.id === currentRole.id ? response.data : role
-      );
-      setRoles(updatedRoles);
+      await updateRole(currentRole.name, { name: name.trim(), description: description.trim() });
+      await fetchRolesList();
       setOpenEditDialog(false);
       resetForm();
       toast.success("Rôle modifié avec succès");
@@ -142,11 +144,9 @@ export default function RoleCrud() {
   // Supprimer un rôle
   const handleDeleteRole = async () => {
     if (!currentRole) return;
-
     try {
-      await axios.delete(`${API_URL}/${currentRole.id}`);
-      const filteredRoles = roles.filter((role) => role.id !== currentRole.id);
-      setRoles(filteredRoles);
+      await deleteRole(currentRole.id);
+      await fetchRolesList();
       setOpenDeleteDialog(false);
       resetForm();
       toast.success("Rôle supprimé avec succès");
@@ -162,7 +162,7 @@ export default function RoleCrud() {
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestion des rôles</h1>
-        <Button onClick={handleAddClick} className="inwiButton">
+        <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
@@ -173,20 +173,21 @@ export default function RoleCrud() {
           <TableHeader>
             <TableRow>
               <TableHead>ID</TableHead>
-              <TableHead>Libellé</TableHead>
+              <TableHead>Nom</TableHead>
+              <TableHead>Description</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
+                <TableCell colSpan={4} className="text-center">
                   Chargement...
                 </TableCell>
               </TableRow>
             ) : roles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
+                <TableCell colSpan={4} className="text-center">
                   Aucun rôle disponible
                 </TableCell>
               </TableRow>
@@ -194,7 +195,8 @@ export default function RoleCrud() {
               roles.map((role) => (
                 <TableRow key={role.id}>
                   <TableCell>{role.id}</TableCell>
-                  <TableCell>{role.libelle}</TableCell>
+                  <TableCell>{role.name}</TableCell>
+                  <TableCell>{role.description}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -233,26 +235,41 @@ export default function RoleCrud() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ajouter un rôle</DialogTitle>
+            <DialogDescription>
+              Remplissez les champs pour ajouter un nouveau rôle.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="libelle" className="text-right">
-                Libellé
+              <Label htmlFor="name" className="text-right">
+                Nom
               </Label>
               <Input
-                id="libelle"
-                value={libelle}
-                onChange={(e) => setLibelle(e.target.value)}
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="col-span-3"
-                placeholder="Ex: Chef de projet"
+                placeholder="Ex: manager"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Input
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="col-span-3"
+                placeholder="Ex: Responsable de projet"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAddDialog(false)}>
+            <Button variant="outline" onClick={() => setOpenAddDialog(false)} >
               Annuler
             </Button>
-            <Button type="submit" onClick={handleAddRole}>
+            <Button type="submit" onClick={handleAddRole} className="inwi_btn">
               Ajouter
             </Button>
           </DialogFooter>
@@ -264,6 +281,9 @@ export default function RoleCrud() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Détails du rôle</DialogTitle>
+            <DialogDescription>
+              Visualisez les informations du rôle sélectionné.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -271,12 +291,18 @@ export default function RoleCrud() {
               <div className="col-span-3">{currentRole?.id}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Libellé</Label>
-              <div className="col-span-3">{currentRole?.libelle}</div>
+              <Label className="text-right">Nom</Label>
+              <div className="col-span-3">{currentRole?.name}</div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Description</Label>
+              <div className="col-span-3">{currentRole?.description}</div>
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setOpenViewDialog(false)}>Fermer</Button>
+            <Button onClick={() => setOpenViewDialog(false)} className="inwi_btn">
+              Fermer
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -286,25 +312,39 @@ export default function RoleCrud() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Modifier le rôle</DialogTitle>
+            <DialogDescription>
+              Modifiez les champs puis cliquez sur "Enregistrer" pour sauvegarder les changements.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="libelle" className="text-right">
-                Libellé
+              <Label htmlFor="name" className="text-right">
+                Nom
               </Label>
               <Input
-                id="libelle"
-                value={libelle}
-                onChange={(e) => setLibelle(e.target.value)}
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                Description
+              </Label>
+              <Input
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 className="col-span-3"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenEditDialog(false)}>
+            <Button variant="outline" onClick={() => setOpenEditDialog(false)} >
               Annuler
             </Button>
-            <Button type="submit" onClick={handleEditRole}>
+            <Button type="submit" onClick={handleEditRole} className="inwi_btn">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -317,8 +357,8 @@ export default function RoleCrud() {
           <DialogHeader>
             <DialogTitle>Supprimer le rôle</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer le rôle{" "}
-              <span className="font-semibold">{currentRole?.libelle}</span> ?
+              Êtes-vous sûr de vouloir supprimer le rôle {" "}
+              <span className="font-semibold">{currentRole?.name}</span> ?
               Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
@@ -326,10 +366,11 @@ export default function RoleCrud() {
             <Button
               variant="outline"
               onClick={() => setOpenDeleteDialog(false)}
+              
             >
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteRole}>
+            <Button variant="destructive" onClick={handleDeleteRole} className="inwi_btn">
               Supprimer
             </Button>
           </DialogFooter>

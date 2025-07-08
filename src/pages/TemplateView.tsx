@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { getTemplates, getEtapeModeles, addEtapeModele, updateTemplate, updateEtapeModele } from "@/services/templateService";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,37 +11,48 @@ import TemplateDisplayEtape from "@/components/template/TemplateDisplayEtape";
 import { Link, useParams } from "react-router-dom";
 import { ChevronLeft, Save } from "lucide-react";
 
+type TemplateProjet = {
+  id: string;
+  description: string;
+  actifYn: boolean;
+};
+
+type EtapeModele = {
+  id: string;
+  description: string;
+  ordre: number;
+  modeleProjetId: string;
+};
+
 export default function TemplateView() {
-  const { tempid } = useParams();
-  const [currentTemplate, setCurrentTemplate] = useState({
-    libelle: "",
-    version: "",
-    description: "",
-    actif_yn: true,
-    etapes: [],
+  const { tempid } = useParams<{ tempid: string }>();
+  const [currentTemplate, setCurrentTemplate] = useState<TemplateProjet>({
+    id: '',
+    description: '',
+    actifYn: true,
   });
 
-  const [formData, setFormData] = useState({
-    libelle: "",
-    version: "",
-    description: "",
-    actif_yn: true,
+  const [formData, setFormData] = useState<{
+    description: string;
+    actifYn: boolean;
+  }>({
+    description: '',
+    actifYn: true,
   });
 
   // Chargement du template
   useEffect(() => {
     const fetchTemplate = async () => {
       try {
-        const res = await axios.get(
-          `http://localhost:8000/template_projet/${tempid}`
-        );
-        setCurrentTemplate(res.data);
-        setFormData({
-          libelle: res.data.libelle,
-          version: res.data.version,
-          description: res.data.description,
-          actif_yn: res.data.actif_yn,
-        });
+        const templates: TemplateProjet[] = await getTemplates();
+        const found = templates.find((t: TemplateProjet) => t.id === tempid);
+        if (found) {
+          setCurrentTemplate(found);
+          setFormData({
+            description: found.description,
+            actifYn: found.actifYn,
+          });
+        }
       } catch (error) {
         toast.error("Erreur lors du chargement du template");
         console.error(error);
@@ -52,51 +63,75 @@ export default function TemplateView() {
   }, [tempid]);
 
   // Gestion des étapes
-  const [etapesTemplate, setEtapesTemplate] = useState([]);
+  const [etapesTemplate, setEtapesTemplate] = useState<EtapeModele[]>([]);
 
   useEffect(() => {
-    if (currentTemplate.etapes) {
-      setEtapesTemplate(currentTemplate.etapes);
+    const fetchEtapes = async () => {
+      try {
+        const allEtapes: EtapeModele[] = await getEtapeModeles();
+        setEtapesTemplate(allEtapes.filter((e: EtapeModele) => e.modeleProjetId === tempid));
+      } catch (error) {
+        toast.error("Erreur lors du chargement des étapes");
+        console.error(error);
+      }
+    };
+    if (currentTemplate.id) {
+      fetchEtapes();
     }
-  }, [currentTemplate]);
+  }, [currentTemplate, tempid]);
 
-  // Sauvegarde du template
+  // Sauvegarde du template et des étapes
   const handleSaveTemplate = async () => {
     try {
-      const updatedTemplate = {
-        ...formData,
-        etapes: etapesTemplate,
-        date_modification: new Date().toISOString(),
-      };
+      // 1. Mettre à jour le template principal
+      await updateTemplate(currentTemplate.id, {
+        description: formData.description,
+        actifYn: formData.actifYn,
+      });
 
-      await axios.put(
-        `http://localhost:8000/template_projet/${tempid}`,
-        updatedTemplate
-      );
-      toast.success("Template sauvegardé avec succès");
+      // 2. Mettre à jour les étapes existantes ou en ajouter
+      for (const etape of etapesTemplate) {
+        if (etape.id && etape.id.length === 36) { // UUID existant
+          await updateEtapeModele(etape.id, {
+            description: etape.description,
+            ordre: etape.ordre,
+            modeleProjetId: etape.modeleProjetId,
+          });
+        } else {
+          await addEtapeModele({
+            description: etape.description,
+            ordre: etape.ordre,
+            modeleProjetId: currentTemplate.id,
+          });
+        }
+      }
+      toast.success("Template et étapes sauvegardés avec succès");
     } catch (error) {
-      toast.error("Erreur lors de la sauvegarde du template");
+      toast.error("Erreur lors de la sauvegarde");
       console.error(error);
     }
   };
 
   // Gestion des étapes
-  const handleAddEtape = (libelle) => {
-    const newEtape = {
-      id: Date.now().toString(),
-      libelle,
-      order: etapesTemplate.length + 1,
+  const handleAddEtape = (description: string) => {
+    // Ajoute localement, pas d'appel API ici
+    const tempId = `temp-${Date.now()}`;
+    const newEtape: EtapeModele = {
+      id: tempId,
+      description,
+      ordre: etapesTemplate.length + 1,
+      modeleProjetId: currentTemplate.id,
     };
     setEtapesTemplate([...etapesTemplate, newEtape]);
-    toast.success("Étape ajoutée avec succès");
+    toast.success("Étape ajoutée localement");
   };
 
-  const handleDeleteEtape = (id) => {
+  const handleDeleteEtape = (id: string) => {
     setEtapesTemplate(etapesTemplate.filter((etape) => etape.id !== id));
-    toast.success("Étape supprimée avec succès");
+    toast.success("Étape supprimée avec succès (mock)");
   };
 
-  const handleOrderChange = (id, direction) => {
+  const handleOrderChange = (id: string, direction: "up" | "down") => {
     setEtapesTemplate((prev) => {
       // 1. Trouver l'index de l'étape à déplacer
       const oldIndex = prev.findIndex((etape) => etape.id === id);
@@ -115,10 +150,10 @@ export default function TemplateView() {
         newEtapes[oldIndex],
       ];
 
-      // 5. Mettre à jour les propriétés `order` pour qu'elles correspondent aux nouveaux index
+      // 5. Mettre à jour les propriétés `ordre` pour qu'elles correspondent aux nouveaux index
       return newEtapes.map((etape, index) => ({
         ...etape,
-        order: index + 1, // order = index
+        ordre: index + 1, // ordre = index
       }));
     });
   };
@@ -153,48 +188,23 @@ export default function TemplateView() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="libelle">Libellé</Label>
-            <Input
-              id="libelle"
-              value={formData.libelle}
-              onChange={(e) =>
-                setFormData({ ...formData, libelle: e.target.value })
-              }
-              placeholder="Nom du template"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="version">Version</Label>
-            <Input
-              id="version"
-              value={formData.version}
-              onChange={(e) =>
-                setFormData({ ...formData, version: e.target.value })
-              }
-              placeholder="Ex: 1.0"
-            />
-          </div>
-
-          <div className="md:col-span-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea
+            <Input
               id="description"
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
               placeholder="Description du template"
-              rows={3}
             />
           </div>
 
           <div className="flex items-center space-x-2">
             <Switch
               id="actif"
-              checked={formData.actif_yn}
+              checked={formData.actifYn}
               onCheckedChange={(checked) =>
-                setFormData({ ...formData, actif_yn: checked })
+                setFormData({ ...formData, actifYn: checked })
               }
             />
             <Label htmlFor="actif">Template actif</Label>
@@ -209,7 +219,14 @@ export default function TemplateView() {
         <TemplateAddEtape onAddEtape={handleAddEtape} />
 
         <TemplateDisplayEtape
-          etapesTemplate={etapesTemplate}
+          etapesTemplate={etapesTemplate
+            .slice()
+            .sort((a, b) => a.ordre - b.ordre)
+            .map(e => ({
+              id: e.id,
+              libelle: e.description,
+              order: e.ordre,
+            }))}
           onDelete={handleDeleteEtape}
           onOrderChange={handleOrderChange}
         />

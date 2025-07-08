@@ -16,35 +16,54 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Archive, Eye, MoreHorizontal, Star } from "lucide-react";
+import { 
+  Archive, 
+  Eye, 
+  MoreHorizontal, 
+  Calendar,
+  Target,
+  CheckCircle,
+  XCircle,
+  FileText,
+  Handshake
+} from "lucide-react";
 import { Link } from "react-router-dom";
-import axios from "axios";
+import { getTemplates, getEtapeModeles } from "@/services/templateService";
 
-// const getStatusColor = (status: string) => {
-//   switch (status) {
-//     case "En attente":
-//       return "secondary";
-//     case "En cours":
-//       return "default";
-//     case "Terminé":
-//       return "success";
-//     default:
-//       return "outline";
-//   }
-// };
+// Helper functions pour récupérer les noms des templates et étapes
+const getTemplateName = (id: string, templates: any[]): string => {
+  const template = templates.find((t: any) => t.id === id);
+  return template?.description || "Template inconnu";
+};
 
-const RenderComplexite = ({ value }: { value: number }) => {
-  return (
-    <div className="flex items-center">
-      {[...Array(5)].map((_, i) => (
-        <Star
-          key={i}
-          size={14}
-          className={i < value ? "fill-current text-amber-500" : "fill-current text-gray-200"}
-        />
-      ))}
-    </div>
-  );
+const getEtapeName = (id: string, etapes: any[]): string => {
+  const etape = etapes.find((e: any) => e.id === id);
+  return etape?.description || "Étape inconnue";
+};
+
+// Fonction pour obtenir la couleur du badge de complexité
+const getComplexityColor = (niveau: string) => {
+  switch (niveau?.toUpperCase()) {
+    case "FAIBLE":
+      return "bg-green-100 text-green-800";
+    case "MOYEN":
+      return "bg-yellow-100 text-yellow-800";
+    case "ÉLEVÉ":
+    case "ELEVE":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
+// Fonction pour formater les dates
+const formatDate = (dateString: string) => {
+  if (!dateString) return "N/A";
+  return new Date(dateString).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  });
 };
 
 type ProjectTableProps = {
@@ -71,45 +90,57 @@ export const ProjectTable = ({
   filters,
 }: ProjectTableProps) => {
   const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [etapes, setEtapes] = useState<any[]>([]);
+
+  // Charger les templates et étapes
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [templatesData, etapesData] = await Promise.all([
+          getTemplates(),
+          getEtapeModeles()
+        ]);
+        setTemplates(templatesData);
+        setEtapes(etapesData);
+      } catch (error) {
+        console.error("Erreur lors du chargement des templates/étapes:", error);
+      }
+    };
+    fetchData();
+  }, []);
 
   useEffect(() => {
     const filtered = projets.filter((project) => {
       // Filtre de recherche
       const matchesSearch = searchTerm
-        ? project.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          project.description
-            ?.toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          project.code.toLowerCase().includes(searchTerm.toLowerCase())
+        ? project.titre.toLowerCase().includes(searchTerm.toLowerCase())
         : true;
 
-      // Filtre par type
-      const matchesType =
-        filters.type === "all" || project.fk_type_projet_id === filters.type;
+      // Filtre par type (si applicable)
+      const matchesType = filters.type === "all" || true; // Temporairement désactivé
 
-      // Filtre par statut
-      const matchesStatus =
-        filters.status === "all" ||
-        project.fk_statut_projet_id === filters.status;
+      // Filtre par statut (si applicable)
+      const matchesStatus = filters.status === "all" || true; // Temporairement désactivé
 
       // Filtre par complexité
       const matchesComplexity =
         filters.complexity === "all" ||
-        project.niveau_complexite === parseInt(filters.complexity);
+        project.niveauComplexite === filters.complexity;
 
       // Filtre par progression
       let matchesProgress = true;
       if (filters.progress !== "all") {
         const [min, max] = filters.progress.split("-").map(Number);
         matchesProgress =
-          project.progression_pct >= min && project.progression_pct <= max;
+          project.progressionPct >= min && project.progressionPct <= max;
       }
 
       // Filtre par passation
       let matchesPassation = true;
       if (filters.passation !== "all") {
         matchesPassation =
-          project.passation_terminee_yn === (filters.passation === "true");
+          project.passationTermineeYn === (filters.passation === "true");
       }
 
       return (
@@ -125,18 +156,6 @@ export const ProjectTable = ({
     setFilteredProjects(filtered);
   }, [searchTerm, projets, filters]);
 
-
-  // Helper functions avec typage correct
-  const getTypeName = (id: string, type_projet: any[]): string => {
-    const type = type_projet.find((t: any) => t.id === id);
-    return type?.libelle || "Inconnu";
-  };
-
-  const getStatusName = (id: string, statut_projet: any[]): string => {
-    const status = statut_projet.find((s: any) => s.id === id);
-    return status?.libelle || "Inconnu";
-  };
-
   if (loading) return <div>Loading...</div>;
 
   return (
@@ -144,19 +163,26 @@ export const ProjectTable = ({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>ID</TableHead>
             <TableHead>Titre</TableHead>
-            <TableHead>Code</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead>Type</TableHead>
+            <TableHead>Template</TableHead>
+            <TableHead>Étape</TableHead>
+            <TableHead>Date Début</TableHead>
+            <TableHead>Date Fin</TableHead>
+            <TableHead>Date Cible</TableHead>
             <TableHead>Progression</TableHead>
             <TableHead>Complexité</TableHead>
-            <TableHead>Date fin</TableHead>
+            <TableHead>Documentation</TableHead>
+            <TableHead>Passation</TableHead>
             <TableHead className="text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filteredProjects.map((project) => (
             <TableRow key={project.id}>
+              <TableCell className="font-mono text-sm">
+                {project.id}
+              </TableCell>
               <TableCell className="font-medium">
                 <Link
                   to={`/projects/${project.id}`}
@@ -164,35 +190,93 @@ export const ProjectTable = ({
                 >
                   {project.titre}
                 </Link>
-                <div className="text-sm text-muted-foreground line-clamp-1">
-                  {project.description}
-                </div>
               </TableCell>
-              <TableCell>{project.code}</TableCell>
               <TableCell>
-                <Badge variant="secondary" className="bg-inwi-tertiary/20 text-inwi-dark-purple">
-                  {getStatusName(project.fk_statut_projet_id, statut_projet)}
+                <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                  {getTemplateName(project.modeleProjetId, templates)}
                 </Badge>
               </TableCell>
               <TableCell>
-                <Badge variant="outline" className="bg-blue-400/20 text-blue-900">
-                  {getTypeName(project.fk_type_projet_id, type_projet)}
+                <Badge variant="outline" className="bg-purple-50 text-purple-700">
+                  {getEtapeName(project.etapeModeleId, etapes)}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline" className="bg-green-50 text-green-700">
+                  <Calendar className="h-3 w-3 mr-1" />
+                  {formatDate(project.dateDebut)}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline" className="bg-red-50 text-red-700">
+                  <Calendar className="h-3 w-3 mr-1" />
+                  {formatDate(project.dateFin)}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline" className="bg-orange-50 text-orange-700">
+                  <Target className="h-3 w-3 mr-1" />
+                  {formatDate(project.dateCible)}
                 </Badge>
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Progress
-                    value={project.progression_pct}
-                    className="h-2 w-20 "
+                    value={project.progressionPct}
+                    className="h-2 w-20"
                   />
-                  <span className="text-sm">{project.progression_pct}%</span>
+                  <span className="text-sm">{project.progressionPct}%</span>
                 </div>
               </TableCell>
               <TableCell>
-                <RenderComplexite value={project.niveau_complexite} />
+                <Badge 
+                  variant="outline" 
+                  className={getComplexityColor(project.niveauComplexite)}
+                >
+                  {project.niveauComplexite}
+                </Badge>
               </TableCell>
               <TableCell>
-                {new Date(project.date_fin).toLocaleDateString("fr-FR")}
+                <Badge 
+                  variant="outline" 
+                  className={project.documentationDeposeeYn 
+                    ? "bg-green-50 text-green-700" 
+                    : "bg-gray-50 text-gray-700"
+                  }
+                >
+                  {project.documentationDeposeeYn ? (
+                    <>
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Oui
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Non
+                    </>
+                  )}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge 
+                  variant="outline" 
+                  className={project.passationTermineeYn 
+                    ? "bg-green-50 text-green-700" 
+                    : "bg-gray-50 text-gray-700"
+                  }
+                >
+                  {project.passationTermineeYn ? (
+                    <>
+                      <Handshake className="h-3 w-3 mr-1" />
+                      Oui
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-3 w-3 mr-1" />
+                      Non
+                    </>
+                  )}
+                </Badge>
               </TableCell>
               <TableCell className="text-right">
                 <DropdownMenu>

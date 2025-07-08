@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Archive, Edit, Eye, MoreHorizontal, CirclePlus } from "lucide-react";
 import { Toaster, toast } from "sonner";
-import axios from "axios";
+import { getEntites, addEntite, updateEntite, deleteEntite } from "@/services/entiteService";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Card,
@@ -39,14 +39,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-const API_URL = "http://localhost:8000/entite";
-
-type Entite = {
-  id: string;
-  titre: string;
-  description: string;
-};
+import type { Entite } from "@/services/entiteService";
 
 export default function EntiteCrud() {
   // État pour la liste des entités
@@ -74,8 +67,8 @@ export default function EntiteCrud() {
   const fetchEntites = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setEntites(response.data);
+      const data = await getEntites();
+      setEntites(data);
     } catch (error) {
       toast.error("Erreur lors du chargement des entités");
       console.error(error);
@@ -120,11 +113,11 @@ export default function EntiteCrud() {
   // Ajouter une nouvelle entité
   const handleAddEntite = async () => {
     try {
-      const response = await axios.post(API_URL, {
+      const newEntite = await addEntite({
         titre: titre.trim(),
         description: description.trim(),
       });
-      setEntites([...entites, response.data]);
+      setEntites([...entites, newEntite]);
       setOpenAddDialog(false);
       resetForm();
       toast.success("Entité ajoutée avec succès");
@@ -139,12 +132,13 @@ export default function EntiteCrud() {
     if (!currentEntite) return;
 
     try {
-      const response = await axios.put(`${API_URL}/${currentEntite.id}`, {
+      const updated = await updateEntite({
+        entiteId: currentEntite.entiteId,
         titre: titre.trim(),
         description: description.trim(),
       });
       const updatedEntites = entites.map((entite) =>
-        entite.id === currentEntite.id ? response.data : entite
+        entite.entiteId === currentEntite.entiteId ? updated : entite
       );
       setEntites(updatedEntites);
       setOpenEditDialog(false);
@@ -161,9 +155,9 @@ export default function EntiteCrud() {
     if (!currentEntite) return;
 
     try {
-      await axios.delete(`${API_URL}/${currentEntite.id}`);
+      await deleteEntite(currentEntite.entiteId);
       const filteredEntites = entites.filter(
-        (entite) => entite.id !== currentEntite.id
+        (entite) => entite.entiteId !== currentEntite.entiteId
       );
       setEntites(filteredEntites);
       setOpenDeleteDialog(false);
@@ -186,7 +180,7 @@ export default function EntiteCrud() {
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestion des entités</h1>
-        <Button onClick={handleAddClick} className="inwiButton">
+        <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
@@ -231,8 +225,8 @@ export default function EntiteCrud() {
                   </TableRow>
                 ) : (
                   entites.map((entite) => (
-                    <TableRow key={entite.id}>
-                      <TableCell>{entite.id}</TableCell>
+                    <TableRow key={entite.entiteId}>
+                      <TableCell>{entite.entiteId}</TableCell>
                       <TableCell>{entite.titre}</TableCell>
                       <TableCell>
                         {truncateText(entite.description, 50)}
@@ -289,7 +283,7 @@ export default function EntiteCrud() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {entites.map((entite) => (
                 <Card
-                  key={entite.id}
+                  key={entite.entiteId}
                   className="hover:shadow-lg transition-shadow"
                 >
                   <CardHeader>
@@ -328,7 +322,7 @@ export default function EntiteCrud() {
                         {truncateText(entite.description, 100)}
                       </div>
                       <div className="flex items-center text-xs text-gray-500">
-                        <Badge variant="secondary">ID: {entite.id}</Badge>
+                        <Badge variant="secondary">ID: {entite.entiteId}</Badge>
                       </div>
                     </div>
                   </CardContent>
@@ -344,6 +338,9 @@ export default function EntiteCrud() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ajouter une entité</DialogTitle>
+            <DialogDescription>
+              Remplissez les champs pour ajouter une nouvelle entité.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -372,10 +369,10 @@ export default function EntiteCrud() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAddDialog(false)}>
+            <Button variant="outline" onClick={() => setOpenAddDialog(false)} >
               Annuler
             </Button>
-            <Button type="submit" onClick={handleAddEntite}>
+            <Button type="submit" onClick={handleAddEntite} className="inwi_btn">
               Ajouter
             </Button>
           </DialogFooter>
@@ -387,11 +384,14 @@ export default function EntiteCrud() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Détails de l'entité</DialogTitle>
+            <DialogDescription>
+              Visualisez les informations de l'entité sélectionnée.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">ID</Label>
-              <div className="col-span-3">{currentEntite?.id}</div>
+              <div className="col-span-3">{currentEntite?.entiteId}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Titre</Label>
@@ -403,7 +403,9 @@ export default function EntiteCrud() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setOpenViewDialog(false)}>Fermer</Button>
+            <Button onClick={() => setOpenViewDialog(false)} className="inwi_btn">
+              Fermer
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -413,6 +415,9 @@ export default function EntiteCrud() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Modifier l'entité</DialogTitle>
+            <DialogDescription>
+              Modifiez les champs puis cliquez sur "Enregistrer" pour sauvegarder les changements.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
@@ -439,10 +444,10 @@ export default function EntiteCrud() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenEditDialog(false)}>
+            <Button variant="outline" onClick={() => setOpenEditDialog(false)} >
               Annuler
             </Button>
-            <Button type="submit" onClick={handleEditEntite}>
+            <Button type="submit" onClick={handleEditEntite} className="inwi_btn">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -464,10 +469,11 @@ export default function EntiteCrud() {
             <Button
               variant="outline"
               onClick={() => setOpenDeleteDialog(false)}
+              
             >
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteEntite}>
+            <Button  onClick={handleDeleteEntite} className="inwi_btn">
               Supprimer
             </Button>
           </DialogFooter>

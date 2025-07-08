@@ -46,10 +46,10 @@ const Members: React.FC = () => {
           </p>
         </div>
         {/* <Button className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"> */}
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
+        {/* <Button className="inwi_logo">
+          <Plus className="h-4 w-4 mr-2 " />
           Nouveau Membre
-        </Button>
+        </Button> */}
       </div>
 
       {/* Filters */}

@@ -53,22 +53,16 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
-import axios from "axios";
+import { getTemplates, addTemplate, deleteTemplate } from "@/services/templateService";
 import { cn } from "@/lib/utils";
 import TemplateDisplateEtape from "@/components/template/TemplateDisplayEtape";
 import TemplateAddEtape from "@/components/template/TemplateAddEtape";
 import TemplateDisplayEtape from "@/components/template/TemplateDisplayEtape";
 
-const API_URL = "http://localhost:8000/template_projet";
-
 type TemplateProjet = {
   id: string;
-  libelle: string;
   description: string;
-  version: string;
-  date_creation: string;
-  date_modification: string;
-  actif_yn: boolean;
+  actifYn: boolean;
 };
 
 export default function TemplateCrud() {
@@ -90,22 +84,21 @@ export default function TemplateCrud() {
 
   // États pour les champs du formulaire
   const [formData, setFormData] = useState({
-    libelle: "",
     description: "",
-    version: "",
-    actif_yn: true,
+    actifYn: true,
+    etapeModeles: [],
   });
 
   // Charger les données initiales
   useEffect(() => {
-    fetchTemplates();
+    fetchTemplatesList();
   }, []);
 
-  const fetchTemplates = async () => {
+  const fetchTemplatesList = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setTemplates(response.data);
+      const data = await getTemplates();
+      setTemplates(data);
     } catch (error) {
       toast.error("Erreur lors du chargement des templates");
       console.error(error);
@@ -126,10 +119,9 @@ export default function TemplateCrud() {
   // Réinitialiser le formulaire
   const resetForm = () => {
     setFormData({
-      libelle: "",
       description: "",
-      version: "",
-      actif_yn: true,
+      actifYn: true,
+      etapeModeles: [],
     });
     setCurrentTemplate(null);
   };
@@ -140,20 +132,16 @@ export default function TemplateCrud() {
     setOpenAddDialog(true);
   };
 
-  // const handleViewClick = (id) => {
-  //   navigate(`/template/${id}`);
-
-  //   // setCurrentTemplate(template);
-  //   // setOpenViewDialog(true);
-  // };
+  const handleViewClick = (id: string) => {
+    navigate(`/template/${id}`);
+  };
 
   const handleEditClick = (template: TemplateProjet) => {
     setCurrentTemplate(template);
     setFormData({
-      libelle: template.libelle,
       description: template.description,
-      version: template.version,
-      actif_yn: template.actif_yn,
+      actifYn: template.actifYn,
+      etapeModeles: [],
     });
     setOpenEditDialog(true);
   };
@@ -167,15 +155,12 @@ export default function TemplateCrud() {
   const handleAddTemplate = async () => {
     try {
       const newTemplate = {
-        ...formData,
-        libelle: formData.libelle.toLowerCase().trim(),
-        description: formData.description.toLowerCase().trim(),
-        date_creation: new Date().toISOString(),
-        date_modification: new Date().toISOString(),
+        description: formData.description.trim(),
+        actifYn: formData.actifYn,
+        etapeModeles: formData.etapeModeles,
       };
-
-      const response = await axios.post(API_URL, newTemplate);
-      setTemplates([...templates, response.data]);
+      const created = await addTemplate(newTemplate);
+      setTemplates([...templates, created]);
       setOpenAddDialog(false);
       resetForm();
       toast.success("Template ajouté avec succès");
@@ -187,9 +172,8 @@ export default function TemplateCrud() {
 
   const handleDeleteTemplate = async () => {
     if (!currentTemplate) return;
-
     try {
-      await axios.delete(`${API_URL}/${currentTemplate.id}`);
+      await deleteTemplate(currentTemplate.id);
       const filteredTemplates = templates.filter(
         (t) => t.id !== currentTemplate.id
       );
@@ -206,17 +190,12 @@ export default function TemplateCrud() {
   // Fonction pour activer/désactiver un template
   const handleToggleStatus = async (template: TemplateProjet) => {
     try {
-      const newStatus = !template.actif_yn;
-      const response = await axios.patch(`${API_URL}/${template.id}`, {
-        actif_yn: newStatus,
-        date_modification: new Date().toISOString(),
-      });
-
-      setTemplates(
-        templates.map((t) =>
-          t.id === template.id ? { ...t, actif_yn: newStatus } : t
-        )
+      const newStatus = !template.actifYn;
+      const response = await getTemplates();
+      const updatedTemplates = response.map((t: TemplateProjet) =>
+        t.id === template.id ? { ...t, actifYn: newStatus } : t
       );
+      setTemplates(updatedTemplates);
 
       toast.success(
         newStatus
@@ -226,7 +205,7 @@ export default function TemplateCrud() {
     } catch (error) {
       toast.error(
         `Erreur lors de ${
-          template.actif_yn ? "la désactivation" : "l'activation"
+          template.actifYn ? "la désactivation" : "l'activation"
         } du template`
       );
       console.error(error);
@@ -238,10 +217,8 @@ export default function TemplateCrud() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestion des templates de projet</h1>
         <Button
-          onClick={(e) => {
-            handleAddClick();
-          }}
-          className="bg-inwi-purple/80 hover:bg-inwi-purple"
+          onClick={handleAddClick}
+          className="inwi_btn bg-inwi-purple/80 hover:bg-inwi-purple"
         >
           Ajouter <CirclePlus className="ml-2" />
         </Button>
@@ -267,9 +244,8 @@ export default function TemplateCrud() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
-                  <TableHead>Libellé</TableHead>
-                  <TableHead>Version</TableHead>
-                  <TableHead>Date création</TableHead>
+                  <TableHead>Description</TableHead>
+                 
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -291,20 +267,24 @@ export default function TemplateCrud() {
                   templates.map((template) => (
                     <TableRow key={template.id}>
                       <TableCell>{template.id}</TableCell>
-                      <TableCell>{template.libelle}</TableCell>
-                      <TableCell>{template.version}</TableCell>
                       <TableCell>
-                        {formatDate(template.date_creation)}
+                        <span
+                          className="font-medium hover:underline hover:cursor-pointer"
+                          onClick={() => handleViewClick(template.id)}
+                        >
+                          {template.description}
+                        </span>
                       </TableCell>
+                      
                       <TableCell>
                         <Badge
                           className={
-                            template.actif_yn
+                            template.actifYn
                               ? "bg-green-200 text-green-800"
                               : "bg-red-200 text-red-800"
                           }
                         >
-                          {template.actif_yn ? "Actif" : "Inactif"}
+                          {template.actifYn ? "Actif" : "Inactif"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -317,7 +297,7 @@ export default function TemplateCrud() {
                           <DropdownMenuContent className="bg-white">
                             <DropdownMenuItem
                               onClick={(e) => {
-                                // handleViewClick(template.id);
+                                handleViewClick(template.id);
                               }}
                             >
                               <Eye className="h-4 w-4 mr-2" />
@@ -335,7 +315,7 @@ export default function TemplateCrud() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className={cn(
-                                template.actif_yn
+                                template.actifYn
                                   ? "text-red-500"
                                   : "text-green-500"
                               )}
@@ -347,12 +327,12 @@ export default function TemplateCrud() {
                               }}
                             >
                               {" "}
-                              {template.actif_yn ? (
+                              {template.actifYn ? (
                                 <ShieldMinus className="h-4 w-4 mr-2" />
                               ) : (
                                 <ShieldCheck className="h-4 w-4 mr-2" />
                               )}{" "}
-                              {template.actif_yn ? "Désactiver" : "Activer"}
+                              {template.actifYn ? "Désactiver" : "Activer"}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -384,7 +364,14 @@ export default function TemplateCrud() {
                 >
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <CardTitle>{template.libelle}</CardTitle>
+                      <CardTitle>
+                        <span
+                          className="text-inwi-purple cursor-pointer underline hover:text-inwi-dark-purple"
+                          onClick={() => handleViewClick(template.id)}
+                        >
+                          {template.description}
+                        </span>
+                      </CardTitle>
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -395,7 +382,7 @@ export default function TemplateCrud() {
                         <DropdownMenuContent className="bg-white">
                           <DropdownMenuItem
                             onClick={(e) => {
-                              // handleViewClick(template.id);
+                              handleViewClick(template.id);
                             }}
                           >
                             <Eye className="h-4 w-4 mr-2" />
@@ -412,7 +399,7 @@ export default function TemplateCrud() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className={cn(
-                              template.actif_yn
+                              template.actifYn
                                 ? "text-red-500"
                                 : "text-green-500"
                             )}
@@ -421,45 +408,30 @@ export default function TemplateCrud() {
                             }}
                           >
                             {" "}
-                            {template.actif_yn ? (
+                            {template.actifYn ? (
                               <ShieldMinus className="h-4 w-4 mr-2" />
                             ) : (
                               <ShieldCheck className="h-4 w-4 mr-2" />
                             )}{" "}
-                            {template.actif_yn ? "Désactiver" : "Activer"}
+                            {template.actifYn ? "Désactiver" : "Activer"}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <div className="space-y-1">
-                      <Label className="text-sm text-gray-500">
-                        Description
-                      </Label>
-                      <p className="text-sm text-gray-700 line-clamp-2">
-                        {template.description || "Aucune description"}
-                      </p>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
                     <Badge
-                      variant={template.actif_yn ? "default" : "outline"}
-                      className="bg-inwi-tertiary/20 text-inwi-dark-purple"
-                    >
-                      {template.version}
-                    </Badge>
-                    <Badge
-                      variant={template.actif_yn ? "default" : "outline"}
+                      variant={template.actifYn ? "default" : "outline"}
                       className={
-                        template.actif_yn
+                        template.actifYn
                           ? "bg-green-200 text-green-800"
                           : "bg-red-200 text-red-800"
                       }
                     >
-                      {template.actif_yn ? "Actif" : "Inactif"}
+                      {template.actifYn ? "Actif" : "Inactif"}
                     </Badge>
-                  </CardFooter>
+                  </CardContent>
+            
                 </Card>
               ))}
             </div>
@@ -474,32 +446,8 @@ export default function TemplateCrud() {
             <DialogTitle>Ajouter un template</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="libelle">Libellé</Label>
-                <Input
-                  id="libelle"
-                  value={formData.libelle}
-                  onChange={(e) =>
-                    setFormData({ ...formData, libelle: e.target.value })
-                  }
-                  placeholder="Nom du template"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="version">Version</Label>
-                <Input
-                  id="version"
-                  value={formData.version}
-                  onChange={(e) =>
-                    setFormData({ ...formData, version: e.target.value })
-                  }
-                  placeholder="Ex: 1.0"
-                  required
-                />
-              </div>
-              <div className="space-y-2 col-span-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
@@ -513,9 +461,9 @@ export default function TemplateCrud() {
               <div className="flex items-center space-x-2 pt-2">
                 <Switch
                   id="actif"
-                  checked={formData.actif_yn}
+                  checked={formData.actifYn}
                   onCheckedChange={(checked) =>
-                    setFormData({ ...formData, actif_yn: checked })
+                    setFormData({ ...formData, actifYn: checked })
                   }
                 />
                 <Label htmlFor="actif">Actif</Label>
@@ -528,6 +476,7 @@ export default function TemplateCrud() {
               onClick={(e) => {
                 setOpenAddDialog(false);
               }}
+         
             >
               Annuler
             </Button>
@@ -536,7 +485,7 @@ export default function TemplateCrud() {
               onClick={() => {
                 handleAddTemplate();
               }}
-              className="bg-inwi-purple/80 hover:bg-inwi-purple"
+              className="inwi_btn bg-inwi-purple/80 hover:bg-inwi-purple"
             >
               Ajouter
             </Button>
@@ -558,30 +507,16 @@ export default function TemplateCrud() {
                   <div>{currentTemplate.id}</div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-gray-500">Libellé</Label>
-                  <div>{currentTemplate.libelle}</div>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-gray-500">Version</Label>
-                  <div>{currentTemplate.version}</div>
+                  <Label className="text-gray-500">Description</Label>
+                  <div>{currentTemplate.description}</div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-gray-500">Statut</Label>
-                  <div>{currentTemplate.actif_yn ? "Actif" : "Inactif"}</div>
-                </div>
-                <div className="space-y-1 col-span-2">
-                  <Label className="text-gray-500">Description</Label>
-                  <div>
-                    {currentTemplate.description || "Aucune description"}
-                  </div>
+                  <div>{currentTemplate.actifYn ? "Actif" : "Inactif"}</div>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-gray-500">Date création</Label>
-                  <div>{formatDate(currentTemplate.date_creation)}</div>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-gray-500">Date modification</Label>
-                  <div>{formatDate(currentTemplate.date_modification)}</div>
+                  <div>{formatDate(new Date().toISOString())}</div>
                 </div>
               </div>
             </div>
@@ -591,6 +526,7 @@ export default function TemplateCrud() {
               onClick={(e) => {
                 setOpenViewDialog(false);
               }}
+              className="inwi_btn"
             >
               Fermer
             </Button>
@@ -605,7 +541,7 @@ export default function TemplateCrud() {
             <DialogTitle>Supprimer le template</DialogTitle>
             <DialogDescription>
               Êtes-vous sûr de vouloir supprimer le template{" "}
-              <span className="font-semibold">{currentTemplate?.libelle}</span>{" "}
+              <span className="font-semibold">{currentTemplate?.description}</span>{" "}
               ? Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
@@ -615,14 +551,16 @@ export default function TemplateCrud() {
               onClick={(e) => {
                 setOpenDeleteDialog(false);
               }}
+         
             >
               Annuler
             </Button>
             <Button
-              variant="destructive"
+           
               onClick={(e) => {
                 handleDeleteTemplate();
               }}
+              className="inwi_btn"
             >
               Supprimer
             </Button>

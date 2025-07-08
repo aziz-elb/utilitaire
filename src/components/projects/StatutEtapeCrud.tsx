@@ -49,15 +49,15 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
-import axios from "axios";
 import { cn } from "@/lib/utils";
-
-const API_URL = "http://localhost:8000/statut_etape";
-
-type StatutEtape = {
-  id: string;
-  libelle: string;
-};
+import {
+  getStatutEtapes,
+  addStatutEtape,
+  updateStatutEtape,
+  deleteStatutEtape,
+  type StatutEtape,
+  type StatutEtapeInput,
+} from "@/services/statutEtapeService";
 
 export default function StatutEtapeCrud() {
   // États principaux
@@ -73,8 +73,8 @@ export default function StatutEtapeCrud() {
   const [currentStatut, setCurrentStatut] = useState<StatutEtape | null>(null);
 
   // États pour les champs du formulaire
-  const [formData, setFormData] = useState({
-    libelle: "",
+  const [formData, setFormData] = useState<StatutEtapeInput>({
+    description: "",
   });
 
   // Charger les données initiales
@@ -85,8 +85,8 @@ export default function StatutEtapeCrud() {
   const fetchStatutsEtape = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setStatutsEtape(response.data);
+      const data = await getStatutEtapes();
+      setStatutsEtape(data);
     } catch (error) {
       toast.error("Erreur lors du chargement des statuts d'étape");
       console.error(error);
@@ -98,7 +98,7 @@ export default function StatutEtapeCrud() {
   // Réinitialiser le formulaire
   const resetForm = () => {
     setFormData({
-      libelle: "",
+      description: "",
     });
     setCurrentStatut(null);
   };
@@ -117,7 +117,7 @@ export default function StatutEtapeCrud() {
   const handleEditClick = (statut: StatutEtape) => {
     setCurrentStatut(statut);
     setFormData({
-      libelle: statut.libelle,
+      description: statut.description,
     });
     setOpenEditDialog(true);
   };
@@ -130,12 +130,10 @@ export default function StatutEtapeCrud() {
   // Opérations CRUD
   const handleAddStatut = async () => {
     try {
-      const newStatut = {
-        libelle: formData.libelle.toLowerCase().trim(),
-      };
-
-      const response = await axios.post(API_URL, newStatut);
-      setStatutsEtape([...statutsEtape, response.data]);
+      const newStatut = await addStatutEtape({
+        description: formData.description.trim(),
+      });
+      setStatutsEtape([...statutsEtape, newStatut]);
       setOpenAddDialog(false);
       resetForm();
       toast.success("Statut d'étape ajouté avec succès");
@@ -149,13 +147,11 @@ export default function StatutEtapeCrud() {
     if (!currentStatut) return;
 
     try {
-      const updatedStatut = {
-        libelle: formData.libelle.toLowerCase().trim(),
-      };
-
-      const response = await axios.put(`${API_URL}/${currentStatut.id}`, updatedStatut);
+      const updatedStatut = await updateStatutEtape(currentStatut.id, {
+        description: formData.description.trim(),
+      });
       const updatedStatuts = statutsEtape.map((t) =>
-        t.id === currentStatut.id ? response.data : t
+        t.id === currentStatut.id ? updatedStatut : t
       );
       setStatutsEtape(updatedStatuts);
       setOpenEditDialog(false);
@@ -171,7 +167,7 @@ export default function StatutEtapeCrud() {
     if (!currentStatut) return;
 
     try {
-      await axios.delete(`${API_URL}/${currentStatut.id}`);
+      await deleteStatutEtape(currentStatut.id);
       const filteredStatuts = statutsEtape.filter((t) => t.id !== currentStatut.id);
       setStatutsEtape(filteredStatuts);
       setOpenDeleteDialog(false);
@@ -189,7 +185,7 @@ export default function StatutEtapeCrud() {
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestion des statuts d'étape</h1>
-        <Button onClick={handleAddClick} className="bg-inwi-purple/80 hover:bg-inwi-purple">
+        <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
@@ -235,7 +231,7 @@ export default function StatutEtapeCrud() {
                   statutsEtape.map((statut) => (
                     <TableRow key={statut.id}>
                       <TableCell>{statut.id}</TableCell>
-                      <TableCell>{statut.libelle}</TableCell>
+                      <TableCell>{statut.description}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -290,7 +286,7 @@ export default function StatutEtapeCrud() {
                   <CardContent>
                     <div className="space-y-1">
                       <Label className="text-sm text-gray-500">Libellé</Label>
-                      <p className="text-sm">{statut.libelle}</p>
+                      <p className="text-sm">{statut.description}</p>
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
@@ -324,12 +320,12 @@ export default function StatutEtapeCrud() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="libelle">Libellé</Label>
+              <Label htmlFor="description">Libellé</Label>
               <Input
-                id="libelle"
-                value={formData.libelle}
+                id="description"
+                value={formData.description}
                 onChange={(e) =>
-                  setFormData({ ...formData, libelle: e.target.value })
+                  setFormData({ ...formData, description: e.target.value })
                 }
                 placeholder="Libellé du statut d'étape"
                 required
@@ -340,7 +336,7 @@ export default function StatutEtapeCrud() {
             <Button variant="outline" onClick={() => setOpenAddDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleAddStatut}>
+            <Button type="submit" onClick={handleAddStatut} className="inwi_btn">
               Ajouter
             </Button>
           </DialogFooter>
@@ -362,13 +358,13 @@ export default function StatutEtapeCrud() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-gray-500">Libellé</Label>
-                  <div>{currentStatut.libelle}</div>
+                  <div>{currentStatut.description}</div>
                 </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setOpenViewDialog(false)} className="bg-inwi-purple/80 hover:bg-inwi-purple">Fermer</Button>
+            <Button onClick={() => setOpenViewDialog(false)} className="bg-inwi-purple/80 hover:bg-inwi-purple inwi_btn">Fermer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -381,12 +377,12 @@ export default function StatutEtapeCrud() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit_libelle">Libellé</Label>
+              <Label htmlFor="edit_description">Libellé</Label>
               <Input
-                id="edit_libelle"
-                value={formData.libelle}
+                id="edit_description"
+                value={formData.description}
                 onChange={(e) =>
-                  setFormData({ ...formData, libelle: e.target.value })
+                  setFormData({ ...formData, description: e.target.value })
                 }
                 placeholder="Libellé du statut d'étape"
                 required
@@ -397,7 +393,7 @@ export default function StatutEtapeCrud() {
             <Button variant="outline" onClick={() => setOpenEditDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleEditStatut} className="bg-inwi-purple/80 hover:bg-inwi-purple">
+            <Button type="submit" onClick={handleEditStatut} className="inwi_btn">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -411,7 +407,7 @@ export default function StatutEtapeCrud() {
             <DialogTitle>Supprimer le statut d'étape</DialogTitle>
             <DialogDescription>
               Êtes-vous sûr de vouloir supprimer le statut d'étape{" "}
-              <span className="font-semibold">{currentStatut?.libelle}</span> ?
+              <span className="font-semibold">{currentStatut?.description}</span> ?
               Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
@@ -419,7 +415,7 @@ export default function StatutEtapeCrud() {
             <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteStatut}>
+            <Button variant="destructive" onClick={handleDeleteStatut} className="inwi_btn">
               Supprimer
             </Button>
           </DialogFooter>

@@ -189,7 +189,7 @@ export default function StatutProjetCrud() {
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestion des statuts de projet</h1>
-        <Button onClick={handleAddClick} className="bg-inwi-purple/80 hover:bg-inwi-purple">
+        <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
@@ -349,7 +349,7 @@ export default function StatutProjetCrud() {
             <Button variant="outline" onClick={() => setOpenAddDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleAddStatut}>
+            <Button type="submit" onClick={handleAddStatut} className="inwi_btn">
               Ajouter
             </Button>
           </DialogFooter>
@@ -377,7 +377,7 @@ export default function StatutProjetCrud() {
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setOpenViewDialog(false)} className="bg-inwi-purple/80 hover:bg-inwi-purple">Fermer</Button>
+            <Button onClick={() => setOpenViewDialog(false)} className="inwi_btn">Fermer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -406,7 +406,7 @@ export default function StatutProjetCrud() {
             <Button variant="outline" onClick={() => setOpenEditDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleEditStatut} className="bg-inwi-purple/80 hover:bg-inwi-purple">
+            <Button type="submit" onClick={handleEditStatut} className="inwi_btn">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -431,7 +431,7 @@ export default function StatutProjetCrud() {
             >
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteStatut}>
+            <Button variant="destructive" onClick={handleDeleteStatut} className="inwi_btn">
               Supprimer
             </Button>
           </DialogFooter>

@@ -7,6 +7,8 @@ import {
   MessageSquare, // Type Commentaire
   UserCog,
   EyeOff, // Type Partie Prenante
+  TrendingUp, // Niveau Influence
+  Activity, // Type Activite
 } from "lucide-react";
 import TypeProjetCrud from "./TypeProjetCrud";
 import StatutProjetCrud from "./StatutProjetCrud";
@@ -14,6 +16,8 @@ import TypeEtapeCrud from "./TypeEtapeCrud";
 import StatutEtapeCrud from "./StatutEtapeCrud";
 import TypeCommentaireCrud from "./TypeCommentaireCrud";
 import TypePartiePrenanteCrud from "./TypePartiePrenanteCrud";
+import NiveauInfluenceCrud from "./NiveauInfluenceCrud";
+import TypeActiviteCrud from "./TypeActiviteCrud";
 
 
 
@@ -26,8 +30,8 @@ export default function ProjectConfig() {
     <div className="container mx-auto py-10">
       <Tabs defaultValue="liste" className="w-full">
         {/* En-tête des onglets */}
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-7 gap-1">
-          <TabsTrigger
+        <TabsList className="grid w-full grid-cols-6  gap-1">
+          {/* <TabsTrigger
             value="types_projets"
             className="flex justify-center items-center"
           >
@@ -41,7 +45,7 @@ export default function ProjectConfig() {
           >
             <Flag className="h-4 w-4 mr-2" />
             <span>Statut Projet</span>
-          </TabsTrigger>
+          </TabsTrigger> */}
 
           <TabsTrigger
             value="types_etapes"
@@ -59,13 +63,13 @@ export default function ProjectConfig() {
             <span>Statut Etape</span>
           </TabsTrigger>
 
-          <TabsTrigger
+          {/* <TabsTrigger
             value="types_commentaires"
             className="flex justify-center items-center"
           >
             <MessageSquare className="h-4 w-4 mr-2" />
             <span>Commentaire</span>
-          </TabsTrigger>
+          </TabsTrigger> */}
 
           <TabsTrigger
             value="type_partie_prenante"
@@ -76,23 +80,34 @@ export default function ProjectConfig() {
           </TabsTrigger>
 
           <TabsTrigger
-            value=""
+            value="niveau_influence"
             className="flex justify-center items-center"
           >
-            <EyeOff className="h-4 w-4 mr-2" />
-            
+            <TrendingUp className="h-4 w-4 mr-2" />
+            <span>Niveau Influence</span>
           </TabsTrigger>
+
+          <TabsTrigger
+            value="type_activite"
+            className="flex justify-center items-center"
+          >
+            <Activity className="h-4 w-4 mr-2" />
+            <span>Type Activité</span>
+          </TabsTrigger>
+          <TabsTrigger value="" className="flex justify-center items-center">
+          <EyeOff className="h-4 w-4 mr-2" />
+        </TabsTrigger>
         </TabsList>
 
         {/* Contenu des onglets */}
         <div className="mt-6">
-          <TabsContent value="types_projets">
+          {/* <TabsContent value="types_projets">
             <TypeProjetCrud />
           </TabsContent>
 
           <TabsContent value="statuts_projets">
             <StatutProjetCrud />
-          </TabsContent>
+          </TabsContent> */}
 
           <TabsContent value="types_etapes">
             <TypeEtapeCrud />
@@ -102,12 +117,20 @@ export default function ProjectConfig() {
             <StatutEtapeCrud />
           </TabsContent>
 
-          <TabsContent value="types_commentaires">
+          {/* <TabsContent value="types_commentaires">
             <TypeCommentaireCrud />
-          </TabsContent>
+          </TabsContent> */}
 
           <TabsContent value="type_partie_prenante">
             <TypePartiePrenanteCrud />
+          </TabsContent>
+
+          <TabsContent value="niveau_influence">
+            <NiveauInfluenceCrud />
+          </TabsContent>
+
+          <TabsContent value="type_activite">
+            <TypeActiviteCrud />
           </TabsContent>
         </div>
       </Tabs>

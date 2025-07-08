@@ -7,17 +7,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "./components/Layout/MainLayout";
 import Dashboard from "./pages/Dashboard";
 import Members from "./pages/Members";
-import Budget from "./pages/Budget";
-import Documents from "./pages/Documents";
-import Activity from "./pages/Activity";
-import Reports from "./pages/Reports";
+
 import Settings from "./pages/Settings";
 import Projects from "./pages/Projects";
 import NotFound from "./pages/NotFound";
 
 import Login from "./pages/Login";
 import { AuthProvider, useAuth } from "./auth/AuthContext";
-import { ProtectedRoute } from "./components/ProtectedRoute.js";
+import PrivateRoute from "./auth/PrivateRoute";
 import "./App.css";
 import ResetPassword from "./pages/ResetPassword";
 import Template from "./pages/Template.js";
@@ -41,9 +38,9 @@ export default function App() {
             <Route
               path="/"
               element={
-                <ProtectedRoute>
+                <PrivateRoute>
                   <MainLayout />
-                </ProtectedRoute>
+                </PrivateRoute>
               }
             >
               <Route index element={<Dashboard />} />
@@ -52,10 +49,7 @@ export default function App() {
               <Route path="/template" element={<Template />} />
                <Route path="/template/:tempid" element={<TemplateView />} />
               <Route path="/members" element={<Members />} />
-              <Route path="/budget" element={<Budget />} />
-              <Route path="/documents" element={<Documents />} />
-              <Route path="/activity" element={<Activity />} />
-              <Route path="/reports" element={<Reports />} />
+
               <Route path="/settings" element={<Settings />} />
               <Route path="/help" element={<HelpPage />} />
             </Route>

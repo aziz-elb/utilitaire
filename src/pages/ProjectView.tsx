@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,15 +18,22 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
+  Target,
+  FileText,
+  Handshake,
+  XCircle,
+  Plus,
+  ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { set } from "date-fns";
-
-//adsfasdfasdfasdf nouveu
-
-import { Plus, Trash2 } from "lucide-react";
+import {
+  getProjectById,
+  updateProject,
+  type Project,
+  updateProjectPartial,
+} from "@/services/projectService";
+import { getTemplates, getEtapeModeles } from "@/services/templateService";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -45,341 +52,420 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableHead,
-  TableRow,
-} from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
+import { CommentairesSection } from "@/components/projects/CommentairesSection";
+import { MembreSection } from "@/components/projects/MembreSection";
+import { ActiviteTab } from "@/components/projects/ActiviteTab";
+import { EtapesProjetTab } from "@/components/projects/EtapesProjetTab";
+import { Calendar as ShadcnCalendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+// Fonction pour formater les dates
+const formatDate = (dateString: string) => {
+  if (!dateString) return "N/A";
+  return new Date(dateString).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
+// Fonction pour obtenir la couleur du badge de complexité
+const getComplexityColor = (niveau: string) => {
+  switch (niveau?.toUpperCase()) {
+    case "FAIBLE":
+      return "bg-green-100 text-green-800";
+    case "MOYEN":
+      return "bg-yellow-100 text-yellow-800";
+    case "ÉLEVÉ":
+    case "ELEVE":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
 
 const ProjectView = () => {
   const { id } = useParams();
-  const [myproject, setMyproject] = useState({});
+  const [project, setProject] = useState<Project | null>(null);
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [etapes, setEtapes] = useState<any[]>([]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [formData, setFormData] = useState({
     titre: "",
     description: "",
-    code: "",
-    date_debut: "",
-    date_fin: "",
-    date_cible: "",
-    fk_type_projet_id: "",
-    fk_statut_projet_id: "",
+    modeleProjetId: "",
+    etapeModeleId: "",
+    dateDebut: "",
+    dateFin: "",
+    dateCible: "",
+    progressionPct: 0,
+    niveauComplexite: "MOYEN",
+    documentationDeposeeYn: false,
+    passationTermineeYn: false,
   });
 
-  // Charger les données du projet
+  // Charger les données du projet et des références
   useEffect(() => {
-    const fetchProject = async () => {
+    const fetchData = async () => {
+      if (!id) return;
+
       setIsLoading(true);
       try {
-        const res = await axios.get(`http://localhost:8000/projet/${id}`);
-        setMyproject(res.data);
+        const [projectData, templatesData, etapesData] = await Promise.all([
+          getProjectById(id),
+          getTemplates(),
+          getEtapeModeles(),
+        ]);
+
+        setProject(projectData);
+        setTemplates(templatesData);
+        setEtapes(etapesData);
+
         setFormData({
-          titre: res.data.titre,
-          description: res.data.description,
-          code: res.data.code,
-          date_debut: res.data.date_debut,
-          date_fin: res.data.date_fin,
-          date_cible: res.data.date_cible,
-          fk_type_projet_id: res.data.fk_type_projet_id,
-          fk_statut_projet_id: res.data.fk_statut_projet_id,
+          titre: projectData.titre || "",
+          description: projectData.description || "",
+          modeleProjetId: projectData.modeleProjetId || "",
+          etapeModeleId: projectData.etapeModeleId || "",
+          dateDebut: projectData.dateDebut || "",
+          dateFin: projectData.dateFin || "",
+          dateCible: projectData.dateCible || "",
+          progressionPct: projectData.progressionPct || 0,
+          niveauComplexite: projectData.niveauComplexite || "MOYEN",
+          documentationDeposeeYn: projectData.documentationDeposeeYn || false,
+          passationTermineeYn: projectData.passationTermineeYn || false,
         });
       } catch (error) {
-        console.error(error);
+        console.error("Erreur lors du chargement du projet:", error);
+        toast.error("Erreur lors du chargement du projet");
       } finally {
         setIsLoading(false);
       }
     };
-    fetchProject();
+    fetchData();
   }, [id]);
 
-  // Fonction pour mettre à jour le projet
+  // Fonction pour mettre à jour le projet (PATCH)
   const handleUpdateProject = async () => {
+    if (!id) return;
+    // Only send changed fields (partial update)
+    const changedFields: any = {};
+    Object.keys(formData).forEach((key) => {
+      if (formData[key as keyof typeof formData] !== (project as any)[key]) {
+        changedFields[key] = formData[key as keyof typeof formData];
+      }
+    });
+    if (Object.keys(changedFields).length === 0) {
+      setOpenEditDialog(false);
+      return;
+    }
     try {
-      const res = await axios.put(`http://localhost:8000/projet/${id}`, {
-        ...formData,
-        progression_pct: formData.progression_pct || 0,
-        actif_yn: formData.actif_yn !== false,
-      });
-      setMyproject(res.data);
+      const updatedProject = await updateProjectPartial(id, changedFields);
+      setProject(updatedProject);
       setOpenEditDialog(false);
       toast.success("Projet mis à jour avec succès");
     } catch (error) {
       toast.error("Erreur lors de la mise à jour du projet");
-      console.error(error);
     }
   };
 
-  // Mock data - would come from API
-  const project = {
-    id: 1,
-    name: "E-commerce Platform",
-    description:
-      "Modern online store with payment integration and inventory management system. This project includes user authentication, product catalog, shopping cart functionality, and admin dashboard.",
-    status: "In Progress",
-    progress: 75,
-    priority: "High",
-    startDate: "2024-03-15",
-    endDate: "2024-07-15",
-    members: [
-      {
-        id: 1,
-        name: "John Doe",
-        role: "Project Manager",
-        avatar: "/placeholder.svg",
-      },
-      {
-        id: 2,
-        name: "Jane Smith",
-        role: "Senior Developer",
-        avatar: "/placeholder.svg",
-      },
-      {
-        id: 3,
-        name: "Mike Johnson",
-        role: "UI/UX Designer",
-        avatar: "/placeholder.svg",
-      },
-    ],
-    tasks: [
-      {
-        id: 1,
-        title: "Database Schema Design",
-        status: "Completed",
-        assignee: "Jane Smith",
-      },
-      {
-        id: 2,
-        title: "User Authentication",
-        status: "In Progress",
-        assignee: "Jane Smith",
-      },
-      {
-        id: 3,
-        title: "Product Catalog UI",
-        status: "In Progress",
-        assignee: "Mike Johnson",
-      },
-      {
-        id: 4,
-        title: "Payment Integration",
-        status: "Todo",
-        assignee: "John Doe",
-      },
-      {
-        id: 5,
-        title: "Admin Dashboard",
-        status: "Todo",
-        assignee: "Jane Smith",
-      },
-    ],
+  // Helper functions
+  const getTemplateName = (id: string): string => {
+    const template = templates.find((t: any) => t.id === id);
+    return template?.description || "Template inconnu";
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "Completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "In Progress":
-        return <Clock className="h-4 w-4 text-inwi-secondary" />;
-      case "Todo":
-        return <AlertCircle className="h-4 w-4 text-gray-500" />;
-      default:
-        return null;
-    }
+  const getEtapeName = (id: string): string => {
+    const etape = etapes.find((e: any) => e.id === id);
+    return etape?.description || "Étape inconnue";
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-64">Chargement...</div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        Projet non trouvé
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       {/* Project Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">
-              {myproject.titre}
-            </h1>
-            <Badge className="bg-inwi-purple hover:bg-inwi-dark-purple text-white">
-              {project.status}
-            </Badge>
-            <Badge variant="destructive">{project.priority}</Badge>
+      <div className="space-y-4">
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold tracking-tight">
+                {project.titre}
+              </h1>
+              <Badge
+                variant="outline"
+                className="text-xs text-muted-foreground"
+              >
+                ID: {project.id}
+              </Badge>
+            </div>
+            <p className="text-muted-foreground max-w-2xl">
+              {project.description}
+            </p>
           </div>
-          <p className="text-muted-foreground max-w-2xl">
-            {project.description}
-          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              className="default"
+              size="lg"
+            >
+              <Link
+                to="/projects"
+                className="flex flex-row items-center justify-center gap-3"
+              >
+                <ChevronLeft />
+                Retour
+              </Link>
+            </Button>
+            <Button variant="outline"  size="lg" onClick={() => setOpenEditDialog(true)}>
+              <Edit className="mr-2 h-4 w-4" />
+              Modifier
+            </Button>
+          </div>
         </div>
+
+        {/* Template et Étape */}
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setOpenEditDialog(true)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
-          <Button variant="outline">
-            <Archive className="mr-2 h-4 w-4" />
-            Archive
-          </Button>
+          <Badge variant="outline" className="bg-blue-50 text-blue-700">
+            Template: {getTemplateName(project.modeleProjetId)}
+          </Badge>
+          <Badge variant="outline" className="bg-purple-50 text-purple-700">
+            Étape: {getEtapeName(project.etapeModeleId)}
+          </Badge>
         </div>
       </div>
 
-      {/* Project Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
+      {/* Project Stats Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Progression</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Progression
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{project.progress}%</div>
-            <Progress
-              value={project.progress}
-              className="mt-2 [&>div]:bg-inwi-purple"
-            />
+            <div className="text-2xl font-bold">{project.progressionPct}%</div>
+            <Progress value={project.progressionPct} className="mt-2" />
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Membres</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Date Début
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{project.members.length}</div>
-            <p className="text-xs text-muted-foreground">Active members</p>
+            <div className="text-sm font-medium">
+              {formatDate(project.dateDebut)}
+            </div>
+            <p className="text-xs text-muted-foreground">Début du projet</p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Date Debut</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              Date Fin
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-sm font-medium">{project.startDate}</div>
-            <p className="text-xs text-muted-foreground">Project started</p>
+            <div className="text-sm font-medium">
+              {formatDate(project.dateFin)}
+            </div>
+            <p className="text-xs text-muted-foreground">Fin prévue</p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Date Fin</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Target className="h-4 w-4" />
+              Date Cible
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-sm font-medium">{project.endDate}</div>
-            <p className="text-xs text-muted-foreground">
-              Deadline approaching
-            </p>
+            <div className="text-sm font-medium">
+              {formatDate(project.dateCible)}
+            </div>
+            <p className="text-xs text-muted-foreground">Objectif</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Additional Stats */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Complexité</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Badge
+              variant="outline"
+              className={getComplexityColor(project.niveauComplexite)}
+            >
+              {project.niveauComplexite}
+            </Badge>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Documentation
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              {project.documentationDeposeeYn ? (
+                <>
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-sm font-medium">Déposée</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-5 w-5 text-gray-400" />
+                  <span className="text-sm font-medium">Non déposée</span>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Handshake className="h-4 w-4" />
+              Passation
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              {project.passationTermineeYn ? (
+                <>
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <span className="text-sm font-medium">Terminée</span>
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-5 w-5 text-gray-400" />
+                  <span className="text-sm font-medium">En cours</span>
+                </>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Detailed Information */}
-      <Tabs defaultValue="tasks" className="space-y-4">
+      <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-          <TabsTrigger value="files">Files</TabsTrigger>
+          <TabsTrigger value="membres">Membres</TabsTrigger>
+          <TabsTrigger value="commentaires">Commentaires</TabsTrigger>
+          <TabsTrigger value="etapes">Étapes</TabsTrigger>
+          {/* <TabsTrigger value="files">Fichiers</TabsTrigger> */}
+          <TabsTrigger value="activites">Activités</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="tasks" className="space-y-4">
+        <TabsContent value="etapes" className="space-y-4">
+          <EtapesProjetTab projetId={id || ""} />
+        </TabsContent>
+
+        <TabsContent value="commentaires" className="space-y-4">
+          <CommentairesSection projetId={id || ""} />
+        </TabsContent>
+
+        {/* <TabsContent value="files" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Project Tasks</CardTitle>
-              <CardDescription>
-                Track the progress of individual tasks in this project
-              </CardDescription>
+              <CardTitle>Fichiers du projet</CardTitle>
+              <CardDescription>Documents et ressources</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {project.tasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <h4 className="font-medium">Documents du projet</h4>
+                  <Button size="sm" className="bg-inwi-purple/80 hover:bg-inwi-purple">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ajouter un fichier
+                  </Button>
+                </div>
+                
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+               
+                  <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
                     <div className="flex items-center gap-3">
-                      {getStatusIcon(task.status)}
-                      <div>
-                        <div className="font-medium">{task.title}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Assigned to {task.assignee}
-                        </div>
+                      <div className="h-10 w-10 rounded bg-blue-100 flex items-center justify-center">
+                        <FileText className="h-5 w-5 text-blue-600" />
                       </div>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={cn({
-                        "bg-green-500 text-white border-transparent":
-                          task.status === "Completed",
-                        "bg-inwi-secondary text-white border-transparent":
-                          task.status === "In Progress",
-                      })}
-                    >
-                      {task.status}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="team" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Team Members</CardTitle>
-              <CardDescription>People working on this project</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {project.members.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-3 p-3 border rounded-lg"
-                  >
-                    <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
-                      {member.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </div>
-                    <div>
-                      <div className="font-medium">{member.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {member.role}
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">Spécifications.pdf</div>
+                        <div className="text-xs text-muted-foreground">2.3 MB • Il y a 3 jours</div>
                       </div>
                     </div>
                   </div>
-                ))}
+                  
+                  <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded bg-green-100 flex items-center justify-center">
+                        <FileText className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">Planning.xlsx</div>
+                        <div className="text-xs text-muted-foreground">1.1 MB • Il y a 1 semaine</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded bg-purple-100 flex items-center justify-center">
+                        <FileText className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">Rapport.docx</div>
+                        <div className="text-xs text-muted-foreground">856 KB • Il y a 2 semaines</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-center py-4 text-muted-foreground">
+                  <p>Gestion avancée des fichiers en cours de développement...</p>
+                </div>
               </div>
             </CardContent>
           </Card>
+        </TabsContent> */}
+
+        <TabsContent value="activites" className="space-y-4">
+          <ActiviteTab projetId={id || ""} />
         </TabsContent>
 
-        <TabsContent value="timeline" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Timeline</CardTitle>
-              <CardDescription>Key milestones and events</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                Timeline feature coming soon...
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="files" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Files</CardTitle>
-              <CardDescription>Documents and resources</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                File management feature coming soon...
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="membres" className="space-y-4">
+          <MembreSection projetId={id || ""} />
         </TabsContent>
       </Tabs>
 
@@ -403,14 +489,22 @@ const ProjectView = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="code">Code</Label>
-                <Input
-                  id="code"
-                  value={formData.code}
-                  onChange={(e) =>
-                    setFormData({ ...formData, code: e.target.value })
+                <Label htmlFor="niveauComplexite">Complexité</Label>
+                <Select
+                  value={formData.niveauComplexite}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, niveauComplexite: value })
                   }
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner la complexité" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FAIBLE">Faible</SelectItem>
+                    <SelectItem value="MOYEN">Moyen</SelectItem>
+                    <SelectItem value="ÉLEVÉ">Élevé</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -426,115 +520,212 @@ const ProjectView = () => {
             </div>
 
             <div className="grid grid-cols-3 gap-4">
+              {/* Date de début */}
               <div className="space-y-2">
-                <Label htmlFor="date_debut">Date de début</Label>
-                <Input
-                  id="date_debut"
-                  type="date"
-                  value={formData.date_debut}
-                  onChange={(e) =>
-                    setFormData({ ...formData, date_debut: e.target.value })
-                  }
-                />
+                <Label htmlFor="dateDebut">Date de début</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.dateDebut && "text-muted-foreground"
+                      )}
+                    >
+                      {formData.dateDebut
+                        ? new Date(formData.dateDebut).toLocaleDateString(
+                            "fr-FR"
+                          )
+                        : "Choisir une date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <ShadcnCalendar
+                      mode="single"
+                      selected={
+                        formData.dateDebut
+                          ? new Date(formData.dateDebut)
+                          : undefined
+                      }
+                      onSelect={(date) => {
+                        setFormData({
+                          ...formData,
+                          dateDebut: date
+                            ? date.toISOString().slice(0, 10)
+                            : "",
+                        });
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
+              {/* Date de fin */}
               <div className="space-y-2">
-                <Label htmlFor="date_fin">Date de fin</Label>
-                <Input
-                  id="date_fin"
-                  type="date"
-                  value={formData.date_fin}
-                  onChange={(e) =>
-                    setFormData({ ...formData, date_fin: e.target.value })
-                  }
-                />
+                <Label htmlFor="dateFin">Date de fin</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.dateFin && "text-muted-foreground"
+                      )}
+                    >
+                      {formData.dateFin
+                        ? new Date(formData.dateFin).toLocaleDateString("fr-FR")
+                        : "Choisir une date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <ShadcnCalendar
+                      mode="single"
+                      selected={
+                        formData.dateFin
+                          ? new Date(formData.dateFin)
+                          : undefined
+                      }
+                      onSelect={(date) => {
+                        setFormData({
+                          ...formData,
+                          dateFin: date ? date.toISOString().slice(0, 10) : "",
+                        });
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
+              {/* Date cible */}
               <div className="space-y-2">
-                <Label htmlFor="date_cible">Date cible</Label>
-                <Input
-                  id="date_cible"
-                  type="date"
-                  value={formData.date_cible}
-                  onChange={(e) =>
-                    setFormData({ ...formData, date_cible: e.target.value })
-                  }
-                />
+                <Label htmlFor="dateCible">Date cible</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.dateCible && "text-muted-foreground"
+                      )}
+                    >
+                      {formData.dateCible
+                        ? new Date(formData.dateCible).toLocaleDateString(
+                            "fr-FR"
+                          )
+                        : "Choisir une date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <ShadcnCalendar
+                      mode="single"
+                      selected={
+                        formData.dateCible
+                          ? new Date(formData.dateCible)
+                          : undefined
+                      }
+                      onSelect={(date) => {
+                        setFormData({
+                          ...formData,
+                          dateCible: date
+                            ? date.toISOString().slice(0, 10)
+                            : "",
+                        });
+                      }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="type">Type de projet</Label>
+                <Label htmlFor="modeleProjetId">Template</Label>
                 <Select
-                  value={formData.fk_type_projet_id}
+                  value={formData.modeleProjetId}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, fk_type_projet_id: value })
+                    setFormData({ ...formData, modeleProjetId: value })
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un type" />
+                    <SelectValue placeholder="Sélectionner un template" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Interne</SelectItem>
-                    <SelectItem value="2">Client</SelectItem>
+                    {templates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.description}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="statut">Statut</Label>
+                <Label htmlFor="etapeModeleId">Étape</Label>
                 <Select
-                  value={formData.fk_statut_projet_id}
+                  value={formData.etapeModeleId}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, fk_statut_projet_id: value })
+                    setFormData({ ...formData, etapeModeleId: value })
                   }
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un statut" />
+                    <SelectValue placeholder="Sélectionner une étape" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">En attente</SelectItem>
-                    <SelectItem value="2">En cours</SelectItem>
-                    <SelectItem value="3">Terminé</SelectItem>
+                    {etapes.map((etape) => (
+                      <SelectItem key={etape.id} value={etape.id}>
+                        {etape.description}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
             </div>
+
             {/* Barre de progression */}
-            <div className="flex justify-between grid-cols-2 items-center">
-              <div className="space-y-2">
-                <Label htmlFor="progression">Progression</Label>
-                <div className="flex items-center gap-4"></div>
-                <Input
-                  type="range"
-                  id="progression"
-                  min="0"
-                  max="100"
-                  value={formData.progression_pct}
-                  onChange={(e) =>
+            <div className="space-y-2">
+              <Label htmlFor="progression">
+                Progression ({formData.progressionPct}%)
+              </Label>
+              <Input
+                type="range"
+                id="progression"
+                min="0"
+                max="100"
+                value={formData.progressionPct}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    progressionPct: parseInt(e.target.value),
+                  })
+                }
+                className="w-full"
+              />
+            </div>
+
+            {/* Switches pour documentation et passation */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="documentation"
+                  checked={formData.documentationDeposeeYn}
+                  onCheckedChange={(checked) =>
                     setFormData({
                       ...formData,
-                      progression_pct: parseInt(e.target.value),
+                      documentationDeposeeYn: checked,
                     })
                   }
-                  className="w-full bg-inwi-purple"
                 />
+                <Label htmlFor="documentation">Documentation déposée</Label>
               </div>
-
-              {/* Switch pour actif/inactif */}
-              <div className="flex items-center space-x-2 pt-2 mr-10">
+              <div className="flex items-center space-x-2">
                 <Switch
-                  id="actif"
-                  checked={formData.actif_yn}
+                  id="passation"
+                  checked={formData.passationTermineeYn}
                   onCheckedChange={(checked) =>
-                    setFormData({ ...formData, actif_yn: checked })
+                    setFormData({ ...formData, passationTermineeYn: checked })
                   }
                 />
-                <Label htmlFor="actif">
-                  {formData.actif_yn ? (
-                    <Badge className="bg-green-100 text-green-800">Actif</Badge>
-                  ) : (
-                    <Badge className="bg-red-100 text-red-800">Inactif</Badge>
-                  )}
-                </Label>
+                <Label htmlFor="passation">Passation terminée</Label>
               </div>
             </div>
           </div>

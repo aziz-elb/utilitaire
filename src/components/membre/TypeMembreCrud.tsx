@@ -30,15 +30,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Archive, Edit, Eye, MoreHorizontal, CirclePlus } from "lucide-react";
 import { Toaster, toast } from "sonner";
-import axios from "axios";
-
-const API_URL = "http://localhost:8000/type_membre";
-
-type TypeMembre = {
-  id: string;
-  libelle: string;
-  obligatoire_yn: boolean;
-};
+import { getTypeMembres, addTypeMembre, updateTypeMembre, deleteTypeMembre } from "@/services/typeMembreService";
+import type { TypeMembre } from "@/services/typeMembreService";
+import { cn } from "@/lib/utils";
 
 export default function TypeMembreCrud() {
   // État pour la liste des types de membre
@@ -65,8 +59,8 @@ export default function TypeMembreCrud() {
   const fetchTypesMembre = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setTypesMembre(response.data);
+      const data = await getTypeMembres();
+      setTypesMembre(data);
     } catch (error) {
       toast.error("Erreur lors du chargement des types de membre");
       console.error(error);
@@ -98,7 +92,7 @@ export default function TypeMembreCrud() {
   const handleEditClick = (typeMembre: TypeMembre) => {
     setCurrentTypeMembre(typeMembre);
     setLibelle(typeMembre.libelle);
-    setObligatoire(typeMembre.obligatoire_yn);
+    setObligatoire(typeMembre.obligatoireYn);
     setOpenEditDialog(true);
   };
 
@@ -111,11 +105,11 @@ export default function TypeMembreCrud() {
   // Ajouter un nouveau type de membre
   const handleAddTypeMembre = async () => {
     try {
-      const response = await axios.post(API_URL, {
+      const newTypeMembre = await addTypeMembre({
         libelle: libelle.trim(),
-        obligatoire_yn: obligatoire,
+        obligatoireYn: obligatoire,
       });
-      setTypesMembre([...typesMembre, response.data]);
+      setTypesMembre([...typesMembre, newTypeMembre]);
       setOpenAddDialog(false);
       resetForm();
       toast.success("Type de membre ajouté avec succès");
@@ -130,12 +124,13 @@ export default function TypeMembreCrud() {
     if (!currentTypeMembre) return;
 
     try {
-      const response = await axios.put(`${API_URL}/${currentTypeMembre.id}`, {
+      const updated = await updateTypeMembre({
+        typeMembreId: currentTypeMembre.typeMembreId,
         libelle: libelle.trim(),
-        obligatoire_yn: obligatoire,
+        obligatoireYn: obligatoire,
       });
       const updatedTypesMembre = typesMembre.map((type) =>
-        type.id === currentTypeMembre.id ? response.data : type
+        type.typeMembreId === currentTypeMembre.typeMembreId ? updated : type
       );
       setTypesMembre(updatedTypesMembre);
       setOpenEditDialog(false);
@@ -152,9 +147,9 @@ export default function TypeMembreCrud() {
     if (!currentTypeMembre) return;
 
     try {
-      await axios.delete(`${API_URL}/${currentTypeMembre.id}`);
+      await deleteTypeMembre(currentTypeMembre.typeMembreId);
       const filteredTypesMembre = typesMembre.filter(
-        (type) => type.id !== currentTypeMembre.id
+        (type) => type.typeMembreId !== currentTypeMembre.typeMembreId
       );
       setTypesMembre(filteredTypesMembre);
       setOpenDeleteDialog(false);
@@ -172,7 +167,7 @@ export default function TypeMembreCrud() {
       
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestion des types de membre</h1>
-        <Button onClick={handleAddClick} className="inwiButton">
+        <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
@@ -203,12 +198,12 @@ export default function TypeMembreCrud() {
               </TableRow>
             ) : (
               typesMembre.map((type) => (
-                <TableRow key={type.id}>
-                  <TableCell>{type.id}</TableCell>
+                <TableRow key={type.typeMembreId}>
+                  <TableCell>{type.typeMembreId}</TableCell>
                   <TableCell>{type.libelle}</TableCell>
                   <TableCell>
-                    <Badge variant={type.obligatoire_yn ? "default" : "outline"}>
-                      {type.obligatoire_yn ? "Oui" : "Non"}
+                    <Badge className={type.obligatoireYn ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                      {type.obligatoireYn ? "Oui" : "Non"}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
@@ -296,7 +291,7 @@ export default function TypeMembreCrud() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">ID</Label>
-              <div className="col-span-3">{currentTypeMembre?.id}</div>
+              <div className="col-span-3">{currentTypeMembre?.typeMembreId}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Libellé</Label>
@@ -305,14 +300,14 @@ export default function TypeMembreCrud() {
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Obligatoire</Label>
               <div className="col-span-3">
-                <Badge variant={currentTypeMembre?.obligatoire_yn ? "default" : "outline"}>
-                  {currentTypeMembre?.obligatoire_yn ? "Oui" : "Non"}
+                <Badge variant={currentTypeMembre?.obligatoireYn ? "default" : "outline"}>
+                  {currentTypeMembre?.obligatoireYn ? "Oui" : "Non"}
                 </Badge>
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setOpenViewDialog(false)}>Fermer</Button>
+            <Button onClick={() => setOpenViewDialog(false)} className="inwi_btn">Fermer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -352,7 +347,7 @@ export default function TypeMembreCrud() {
             <Button variant="outline" onClick={() => setOpenEditDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleEditTypeMembre}>
+            <Button type="submit" onClick={handleEditTypeMembre} className="inwi_btn">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -374,7 +369,7 @@ export default function TypeMembreCrud() {
             <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteTypeMembre}>
+            <Button className="inwi_btn" onClick={handleDeleteTypeMembre}>
               Supprimer
             </Button>
           </DialogFooter>

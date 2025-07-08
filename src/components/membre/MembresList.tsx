@@ -1,38 +1,19 @@
 // MembreList.tsx (parent)
 import { useEffect, useState } from "react";
-import axios from "axios";
 import MembreCrud from "./MembreCrud";
 import MembreStatistique from "./MembreStatistique";
+import { getMembres, type Membre as ServiceMembre } from "@/services/membreService";
+import { getFonctions, type Fonction as ServiceFonction } from "@/services/fonctionService";
+import { getEntites, type Entite as ServiceEntite } from "@/services/entiteService";
+import { getTypeMembres, type TypeMembre as ServiceTypeMembre } from "@/services/typeMembreService";
+import { getRoles, type Role as ServiceRole } from "@/services/roleService";
 
-type Membre = {
-  id: string;
-  keycloak_user_id: string;
-  fk_type_membre_id: string;
-  nom_prenom: string;
-  email: string;
-  telephone: string;
-  fk_entite_id: string;
-  fk_fonction_id: string;
-  interne_yn: boolean;
-  date_creation: string;
-  profile_picture_url: string;
-  actif_yn: boolean;
-};
-
-type Fonction = {
-  id: string;
-  libelle: string;
-};
-
-type Entite = {
-  id: string;
-  titre: string;
-};
-
-type TypeMembre = {
-  id: string;
-  libelle: string;
-};
+// Use the types from the services
+type Membre = ServiceMembre;
+type Fonction = ServiceFonction;
+type Entite = ServiceEntite;
+type TypeMembre = ServiceTypeMembre;
+type Role = ServiceRole;
 
 const MembreList = () => {
   const [loading, setLoading] = useState(true);
@@ -41,22 +22,24 @@ const MembreList = () => {
   const [fonctions, setFonctions] = useState<Fonction[]>([]);
   const [entites, setEntites] = useState<Entite[]>([]);
   const [typesMembre, setTypesMembre] = useState<TypeMembre[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
-        const [membresRes, fonctionsRes, entitesRes, typesMembreRes] = 
+        const [membresData, fonctionsData, entitesData, typesMembreData, rolesData] = 
           await Promise.all([
-            axios.get("http://localhost:8000/membre"),
-            axios.get("http://localhost:8000/fonction"),
-            axios.get("http://localhost:8000/entite"),
-            axios.get("http://localhost:8000/type_membre")
+            getMembres(),
+            getFonctions(),
+            getEntites(),
+            getTypeMembres(),
+            getRoles()
           ]);
 
         // Ajout des données fictives pour la démo
-        const membresWithStats = membresRes.data.map((membre: Membre) => ({
+        const membresWithStats = membresData.map((membre: Membre) => ({
           ...membre,
           projets_count: Math.floor(Math.random() * 10),
           last_login: new Date(
@@ -65,9 +48,10 @@ const MembreList = () => {
         }));
 
         setMembres(membresWithStats);
-        setFonctions(fonctionsRes.data);
-        setEntites(entitesRes.data);
-        setTypesMembre(typesMembreRes.data);
+        setFonctions(fonctionsData);
+        setEntites(entitesData);
+        setTypesMembre(typesMembreData);
+        setRoles(rolesData);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
       } finally {
@@ -82,11 +66,15 @@ const MembreList = () => {
     return <div>Erreur: {error}</div>;
   }
 
+  // Transform membres for MembreStatistique to match expected interface
+  const membresForStats = membres.map(membre => ({
+    id: membre.id,
+    actif_yn: membre.actifYn,
+    interne_yn: membre.interneYn,
+  }));
+
   return (<>
-  
-
-    <MembreStatistique membres={membres} />
-
+    <MembreStatistique membres={membresForStats} />
 
     <div className="container mx-auto py-4">
       <MembreCrud 
@@ -94,6 +82,7 @@ const MembreList = () => {
         fonctions={fonctions}
         entites={entites}
         typesMembre={typesMembre}
+        roles={roles}
         loading={loading}
         onMembreUpdated={(updatedMembres) => setMembres(updatedMembres)}
       />

@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Layers,
   HelpCircle,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,10 +25,10 @@ const menuItems = [
   { icon: FolderKanban, label: "Projets", path: "/projects" },
   { icon: Layers, label: "Templates", path: "/template" },
   { icon: Users, label: "Membres", path: "/members" },
-  { icon: DollarSign, label: "Budget & KPIs", path: "/budget" },
-  { icon: FileText, label: "Documents", path: "/documents" },
-  { icon: Activity, label: "Historique", path: "/activity" },
-  { icon: BarChart3, label: "Rapports", path: "/reports" },
+  // { icon: DollarSign, label: "Budget & KPIs", path: "/budget" },
+  // { icon: FileText, label: "Documents", path: "/documents" },
+  // { icon: Activity, label: "Historique", path: "/activity" },
+  // { icon: BarChart3, label: "Rapports", path: "/reports" },
 ];
 
 const menuItems2 = [

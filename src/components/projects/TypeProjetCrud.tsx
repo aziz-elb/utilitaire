@@ -238,10 +238,7 @@ export default function TypeProjetCrud() {
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestion des types de projet</h1>
-        <Button
-          onClick={handleAddClick}
-          className="bg-inwi-purple/80 hover:bg-inwi-purple"
-        >
+        <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>

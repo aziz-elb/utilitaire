@@ -28,14 +28,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Archive, Edit, Eye, MoreHorizontal, CirclePlus } from "lucide-react";
 import { Toaster, toast } from "sonner";
-import axios from "axios";
-
-const API_URL = "http://localhost:8000/fonction";
-
-type Fonction = {
-  id: string;
-  libelle: string;
-};
+import { getFonctions, addFonction, updateFonction, deleteFonction } from "@/services/fonctionService";
+import type { Fonction } from "@/services/fonctionService";
 
 export default function FonctionCrud() {
   // État pour la liste des fonctions
@@ -61,8 +55,8 @@ export default function FonctionCrud() {
   const fetchFonctions = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setFonctions(response.data);
+      const data = await getFonctions();
+      setFonctions(data);
     } catch (error) {
       toast.error("Erreur lors du chargement des fonctions");
       console.error(error);
@@ -105,10 +99,10 @@ export default function FonctionCrud() {
   // Ajouter une nouvelle fonction
   const handleAddFonction = async () => {
     try {
-      const response = await axios.post(API_URL, {
+      const newFonction = await addFonction({
         libelle: libelle.trim(),
       });
-      setFonctions([...fonctions, response.data]);
+      setFonctions([...fonctions, newFonction]);
       setOpenAddDialog(false);
       resetForm();
       toast.success("Fonction ajoutée avec succès");
@@ -123,11 +117,12 @@ export default function FonctionCrud() {
     if (!currentFonction) return;
 
     try {
-      const response = await axios.put(`${API_URL}/${currentFonction.id}`, {
+      const updated = await updateFonction({
+        fonctionId: currentFonction.fonctionId,
         libelle: libelle.trim(),
       });
       const updatedFonctions = fonctions.map((fonction) =>
-        fonction.id === currentFonction.id ? response.data : fonction
+        fonction.fonctionId === currentFonction.fonctionId ? updated : fonction
       );
       setFonctions(updatedFonctions);
       setOpenEditDialog(false);
@@ -144,9 +139,9 @@ export default function FonctionCrud() {
     if (!currentFonction) return;
 
     try {
-      await axios.delete(`${API_URL}/${currentFonction.id}`);
+      await deleteFonction(currentFonction.fonctionId);
       const filteredFonctions = fonctions.filter(
-        (fonction) => fonction.id !== currentFonction.id
+        (fonction) => fonction.fonctionId !== currentFonction.fonctionId
       );
       setFonctions(filteredFonctions);
       setOpenDeleteDialog(false);
@@ -164,7 +159,7 @@ export default function FonctionCrud() {
       
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestion des fonctions</h1>
-        <Button onClick={handleAddClick} className="inwiButton">
+        <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
@@ -194,8 +189,8 @@ export default function FonctionCrud() {
               </TableRow>
             ) : (
               fonctions.map((fonction) => (
-                <TableRow key={fonction.id}>
-                  <TableCell>{fonction.id}</TableCell>
+                <TableRow key={fonction.fonctionId}>
+                  <TableCell>{fonction.fonctionId}</TableCell>
                   <TableCell>{fonction.libelle}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -251,10 +246,10 @@ export default function FonctionCrud() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAddDialog(false)}>
+            <Button variant="outline" onClick={() => setOpenAddDialog(false)} >
               Annuler
             </Button>
-            <Button type="submit" onClick={handleAddFonction}>
+            <Button type="submit" onClick={handleAddFonction} className="inwi_btn">
               Ajouter
             </Button>
           </DialogFooter>
@@ -270,7 +265,7 @@ export default function FonctionCrud() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">ID</Label>
-              <div className="col-span-3">{currentFonction?.id}</div>
+              <div className="col-span-3">{currentFonction?.fonctionId}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Libellé</Label>
@@ -278,7 +273,9 @@ export default function FonctionCrud() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={() => setOpenViewDialog(false)}>Fermer</Button>
+            <Button onClick={() => setOpenViewDialog(false)} className="inwi_btn">
+              Fermer
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -303,10 +300,10 @@ export default function FonctionCrud() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenEditDialog(false)}>
+            <Button variant="outline" onClick={() => setOpenEditDialog(false)} >
               Annuler
             </Button>
-            <Button type="submit" onClick={handleEditFonction}>
+            <Button type="submit" onClick={handleEditFonction} className="inwi_btn">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -325,10 +322,10 @@ export default function FonctionCrud() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>
+            <Button variant="outline" onClick={() => setOpenDeleteDialog(false)} >
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteFonction}>
+            <Button variant="destructive" onClick={handleDeleteFonction} className="inwi_btn">
               Supprimer
             </Button>
           </DialogFooter>

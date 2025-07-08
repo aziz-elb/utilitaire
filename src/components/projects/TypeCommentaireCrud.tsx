@@ -189,7 +189,7 @@ export default function TypeCommentaireCrud() {
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestion des types de commentaire</h1>
-        <Button onClick={handleAddClick} className="bg-inwi-purple/80 hover:bg-inwi-purple">
+        <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
@@ -340,7 +340,7 @@ export default function TypeCommentaireCrud() {
             <Button variant="outline" onClick={() => setOpenAddDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleAddType}>
+            <Button type="submit" onClick={handleAddType} className="inwi_btn">
               Ajouter
             </Button>
           </DialogFooter>
@@ -368,7 +368,7 @@ export default function TypeCommentaireCrud() {
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setOpenViewDialog(false)} className="bg-inwi-purple/80 hover:bg-inwi-purple">Fermer</Button>
+            <Button onClick={() => setOpenViewDialog(false)} className="inwi_btn">Fermer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -397,7 +397,7 @@ export default function TypeCommentaireCrud() {
             <Button variant="outline" onClick={() => setOpenEditDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleEditType} className="bg-inwi-purple/80 hover:bg-inwi-purple">
+            <Button type="submit" onClick={handleEditType} className="inwi_btn">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -419,7 +419,7 @@ export default function TypeCommentaireCrud() {
             <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteType}>
+            <Button variant="destructive" onClick={handleDeleteType} className="inwi_btn">
               Supprimer
             </Button>
           </DialogFooter>

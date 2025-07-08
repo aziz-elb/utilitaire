@@ -208,23 +208,8 @@
       "libelle": "Template Agile Standard",
       "version": "2.1",
       "description": "Template pour les projets utilisant la méthodologie Agile",
-      "actif_yn": true,
+      "actif_yn": false,
       "etapes": [
-        {
-          "id": "1750160777427",
-          "libelle": "sfasfads",
-          "order": 1
-        },
-        {
-          "id": "3",
-          "libelle": "Sprint 2 - Développement",
-          "order": 2
-        },
-        {
-          "id": "4",
-          "libelle": "Revue finale",
-          "order": 3
-        },
         {
           "id": "2",
           "libelle": "Sprint 1 - Développement",
@@ -234,9 +219,14 @@
           "id": "1",
           "libelle": "Sprint 0 - Initialisation",
           "order": 5
+        },
+        {
+          "id": "1750933427953",
+          "libelle": "ddjkhsa",
+          "order": 6
         }
       ],
-      "date_modification": "2025-06-21T21:00:42.312Z",
+      "date_modification": "2025-06-26T10:24:10.074Z",
       "id": "1"
     },
     {
@@ -368,7 +358,7 @@
       "fk_fonction_id": "2",
       "interne_yn": false,
       "profile_picture_url": "",
-      "actif_yn": true,
+      "actif_yn": false,
       "date_creation": "2025-06-18T21:30:51.253Z"
     }
   ],
@@ -389,7 +379,59 @@
       "passation_terminee_yn": false,
       "fk_createur_membre_id": "1",
       "date_creation": "2025-01-10T09:30:00Z",
-      "visibilite_yn": true
+      "visibilite_yn": true,
+      "members": [
+        {
+          "id": 1,
+          "name": "Jean Dupont",
+          "role": "Chef de projet",
+          "avatar": "/placeholder.svg"
+        },
+        {
+          "id": 2,
+          "name": "Marie Lambert",
+          "role": "Développeuse Full-stack",
+          "avatar": "/placeholder.svg"
+        },
+        {
+          "id": 3,
+          "name": "Thomas Martin",
+          "role": "Concepteur pédagogique",
+          "avatar": "/placeholder.svg"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 1,
+          "title": "Conception de l'architecture",
+          "status": "Completed",
+          "assignee": "Jean Dupont"
+        },
+        {
+          "id": 2,
+          "title": "Développement des modules d'apprentissage",
+          "status": "In Progress",
+          "assignee": "Marie Lambert"
+        },
+        {
+          "id": 3,
+          "title": "Intégration des quiz et évaluations",
+          "status": "In Progress",
+          "assignee": "Marie Lambert"
+        },
+        {
+          "id": 4,
+          "title": "Création des contenus pédagogiques",
+          "status": "In Progress",
+          "assignee": "Thomas Martin"
+        },
+        {
+          "id": 5,
+          "title": "Tests utilisateurs",
+          "status": "Todo",
+          "assignee": "Jean Dupont"
+        }
+      ]
     },
     {
       "titre": "Refonte Site Web Corporatif",
@@ -402,7 +444,53 @@
       "fk_statut_projet_id": "3",
       "progression_pct": 11,
       "actif_yn": true,
-      "id": "2"
+      "id": "2",
+      "members": [
+        {
+          "id": 4,
+          "name": "Sophie Bernard",
+          "role": "Designer UI/UX",
+          "avatar": "/placeholder.svg"
+        },
+        {
+          "id": 5,
+          "name": "Pierre Leroy",
+          "role": "Développeur Front-end",
+          "avatar": "/placeholder.svg"
+        },
+        {
+          "id": 6,
+          "name": "Lucie Petit",
+          "role": "Rédactrice",
+          "avatar": "/placeholder.svg"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 1,
+          "title": "Audit de l'existant",
+          "status": "Completed",
+          "assignee": "Sophie Bernard"
+        },
+        {
+          "id": 2,
+          "title": "Maquettes des nouvelles pages",
+          "status": "In Progress",
+          "assignee": "Sophie Bernard"
+        },
+        {
+          "id": 3,
+          "title": "Intégration de la page d'accueil",
+          "status": "Todo",
+          "assignee": "Pierre Leroy"
+        },
+        {
+          "id": 4,
+          "title": "Rédaction des nouveaux contenus",
+          "status": "Todo",
+          "assignee": "Lucie Petit"
+        }
+      ]
     },
     {
       "id": "3",
@@ -420,7 +508,53 @@
       "passation_terminee_yn": false,
       "fk_createur_membre_id": "3",
       "date_creation": "2025-03-01T10:00:00Z",
-      "visibilite_yn": true
+      "visibilite_yn": true,
+      "members": [
+        {
+          "id": 7,
+          "name": "Nicolas Moreau",
+          "role": "Développeur Back-end",
+          "avatar": "/placeholder.svg"
+        },
+        {
+          "id": 8,
+          "name": "Élodie Garnier",
+          "role": "Développeuse Front-end",
+          "avatar": "/placeholder.svg"
+        },
+        {
+          "id": 9,
+          "name": "David Lefevre",
+          "role": "Analyste RH",
+          "avatar": "/placeholder.svg"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 1,
+          "title": "Analyse des besoins RH",
+          "status": "Completed",
+          "assignee": "David Lefevre"
+        },
+        {
+          "id": 2,
+          "title": "Modélisation de la base de données",
+          "status": "Completed",
+          "assignee": "Nicolas Moreau"
+        },
+        {
+          "id": 3,
+          "title": "Développement des API",
+          "status": "In Progress",
+          "assignee": "Nicolas Moreau"
+        },
+        {
+          "id": 4,
+          "title": "Interface utilisateur",
+          "status": "Todo",
+          "assignee": "Élodie Garnier"
+        }
+      ]
     },
     {
       "id": "4",
@@ -438,7 +572,53 @@
       "passation_terminee_yn": false,
       "fk_createur_membre_id": "4",
       "date_creation": "2025-03-20T16:30:00Z",
-      "visibilite_yn": true
+      "visibilite_yn": true,
+      "members": [
+        {
+          "id": 10,
+          "name": "Camille Rousseau",
+          "role": "Responsable Marketing",
+          "avatar": "/placeholder.svg"
+        },
+        {
+          "id": 11,
+          "name": "Antoine Blanc",
+          "role": "Graphiste",
+          "avatar": "/placeholder.svg"
+        },
+        {
+          "id": 12,
+          "name": "Sarah Dubois",
+          "role": "Community Manager",
+          "avatar": "/placeholder.svg"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 1,
+          "title": "Stratégie de campagne",
+          "status": "Completed",
+          "assignee": "Camille Rousseau"
+        },
+        {
+          "id": 2,
+          "title": "Création des visuels",
+          "status": "In Progress",
+          "assignee": "Antoine Blanc"
+        },
+        {
+          "id": 3,
+          "title": "Planification des publications",
+          "status": "Todo",
+          "assignee": "Sarah Dubois"
+        },
+        {
+          "id": 4,
+          "title": "Lancement de la campagne",
+          "status": "Todo",
+          "assignee": "Camille Rousseau"
+        }
+      ]
     },
     {
       "id": "5",
@@ -456,7 +636,53 @@
       "passation_terminee_yn": false,
       "fk_createur_membre_id": "1",
       "date_creation": "2025-04-15T11:20:00Z",
-      "visibilite_yn": true
+      "visibilite_yn": true,
+      "members": [
+        {
+          "id": 13,
+          "name": "Alexandre Laurent",
+          "role": "Admin Système",
+          "avatar": "/placeholder.svg"
+        },
+        {
+          "id": 14,
+          "name": "Julie Mercier",
+          "role": "Ingénieure Cloud",
+          "avatar": "/placeholder.svg"
+        },
+        {
+          "id": 15,
+          "name": "Marc Vidal",
+          "role": "Architecte Solutions",
+          "avatar": "/placeholder.svg"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 1,
+          "title": "Audit de l'infrastructure actuelle",
+          "status": "Completed",
+          "assignee": "Alexandre Laurent"
+        },
+        {
+          "id": 2,
+          "title": "Choix du fournisseur Cloud",
+          "status": "In Progress",
+          "assignee": "Marc Vidal"
+        },
+        {
+          "id": 3,
+          "title": "Plan de migration",
+          "status": "Todo",
+          "assignee": "Julie Mercier"
+        },
+        {
+          "id": 4,
+          "title": "Migration des applications critiques",
+          "status": "Todo",
+          "assignee": "Alexandre Laurent"
+        }
+      ]
     },
     {
       "id": "6",
@@ -474,7 +700,53 @@
       "passation_terminee_yn": false,
       "fk_createur_membre_id": "6",
       "date_creation": "2025-05-20T14:10:00Z",
-      "visibilite_yn": true
+      "visibilite_yn": true,
+      "members": [
+        {
+          "id": 16,
+          "name": "Laurence Simon",
+          "role": "Formatrice Agile",
+          "avatar": "/placeholder.svg"
+        },
+        {
+          "id": 17,
+          "name": "Pauline Chevalier",
+          "role": "Coordinatrice RH",
+          "avatar": "/placeholder.svg"
+        },
+        {
+          "id": 18,
+          "name": "Romain Gauthier",
+          "role": "Scrum Master",
+          "avatar": "/placeholder.svg"
+        }
+      ],
+      "tasks": [
+        {
+          "id": 1,
+          "title": "Évaluation des besoins en formation",
+          "status": "Completed",
+          "assignee": "Pauline Chevalier"
+        },
+        {
+          "id": 2,
+          "title": "Préparation du matériel de formation",
+          "status": "In Progress",
+          "assignee": "Laurence Simon"
+        },
+        {
+          "id": 3,
+          "title": "Planification des sessions",
+          "status": "Todo",
+          "assignee": "Pauline Chevalier"
+        },
+        {
+          "id": 4,
+          "title": "Animation des ateliers pratiques",
+          "status": "Todo",
+          "assignee": "Romain Gauthier"
+        }
+      ]
     }
   ],
   "partie_prenante": [

@@ -203,7 +203,7 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-3 lg:grid-cols-3 gap-6">
         {/* Projets en cours */}
-        <div className="md:col-span-2">
+        {/* <div className="md:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle>Projets en Cours</CardTitle>
@@ -252,7 +252,7 @@ const Dashboard: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </div> */}
         <div className="md:col-span-1">
           {/* Alertes et Notifications */}
           <Card>

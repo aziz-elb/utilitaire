@@ -44,15 +44,15 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
-import axios from "axios";
 import { cn } from "@/lib/utils";
-
-const API_URL = "http://localhost:8000/type_partie_prenante";
-
-type TypePartiePrenante = {
-  id: string;
-  libelle: string;
-};
+import {
+  getTypePartiePrenantes,
+  addTypePartiePrenante,
+  updateTypePartiePrenante,
+  deleteTypePartiePrenante,
+  type TypePartiePrenante,
+  type TypePartiePrenanteInput,
+} from "@/services/typePartiePrenanteService";
 
 export default function TypePartiePrenanteCrud() {
   // États principaux
@@ -72,8 +72,8 @@ export default function TypePartiePrenanteCrud() {
   );
 
   // États pour les champs du formulaire
-  const [formData, setFormData] = useState({
-    libelle: "",
+  const [formData, setFormData] = useState<TypePartiePrenanteInput>({
+    description: "",
   });
 
   // Charger les données initiales
@@ -84,8 +84,8 @@ export default function TypePartiePrenanteCrud() {
   const fetchTypesPartiePrenante = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setTypesPartiePrenante(response.data);
+      const data = await getTypePartiePrenantes();
+      setTypesPartiePrenante(data);
     } catch (error) {
       toast.error("Erreur lors du chargement des types de partie prenante");
       console.error(error);
@@ -97,7 +97,7 @@ export default function TypePartiePrenanteCrud() {
   // Réinitialiser le formulaire
   const resetForm = () => {
     setFormData({
-      libelle: "",
+      description: "",
     });
     setCurrentType(null);
   };
@@ -116,7 +116,7 @@ export default function TypePartiePrenanteCrud() {
   const handleEditClick = (type: TypePartiePrenante) => {
     setCurrentType(type);
     setFormData({
-      libelle: type.libelle,
+      description: type.description,
     });
     setOpenEditDialog(true);
   };
@@ -129,12 +129,10 @@ export default function TypePartiePrenanteCrud() {
   // Opérations CRUD
   const handleAddType = async () => {
     try {
-      const newType = {
-        libelle: formData.libelle.toLowerCase().trim(),
-      };
-
-      const response = await axios.post(API_URL, newType);
-      setTypesPartiePrenante([...typesPartiePrenante, response.data]);
+      const newType = await addTypePartiePrenante({
+        description: formData.description.trim(),
+      });
+      setTypesPartiePrenante([...typesPartiePrenante, newType]);
       setOpenAddDialog(false);
       resetForm();
       toast.success("Type de partie prenante ajouté avec succès");
@@ -148,16 +146,11 @@ export default function TypePartiePrenanteCrud() {
     if (!currentType) return;
 
     try {
-      const updatedType = {
-        libelle: formData.libelle.toLowerCase().trim(),
-      };
-
-      const response = await axios.put(
-        `${API_URL}/${currentType.id}`,
-        updatedType
-      );
+      const updatedType = await updateTypePartiePrenante(currentType.id, {
+        description: formData.description.trim(),
+      });
       const updatedTypes = typesPartiePrenante.map((t) =>
-        t.id === currentType.id ? response.data : t
+        t.id === currentType.id ? updatedType : t
       );
       setTypesPartiePrenante(updatedTypes);
       setOpenEditDialog(false);
@@ -173,7 +166,7 @@ export default function TypePartiePrenanteCrud() {
     if (!currentType) return;
 
     try {
-      await axios.delete(`${API_URL}/${currentType.id}`);
+      await deleteTypePartiePrenante(currentType.id);
       const filteredTypes = typesPartiePrenante.filter(
         (t) => t.id !== currentType.id
       );
@@ -195,7 +188,7 @@ export default function TypePartiePrenanteCrud() {
         <h1 className="text-2xl font-bold">
           Gestion des types de partie prenante
         </h1>
-        <Button onClick={handleAddClick} className="bg-inwi-purple/80 hover:bg-inwi-purple">
+        <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
@@ -241,7 +234,7 @@ export default function TypePartiePrenanteCrud() {
                   typesPartiePrenante.map((type) => (
                     <TableRow key={type.id}>
                       <TableCell>{type.id}</TableCell>
-                      <TableCell>{type.libelle}</TableCell>
+                      <TableCell>{type.description}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -298,7 +291,7 @@ export default function TypePartiePrenanteCrud() {
                   className="hover:shadow-lg transition-shadow"
                 >
                   <CardHeader>
-                    <CardTitle>{type.libelle}</CardTitle>
+                                          <CardTitle>{type.description}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-col space-y-1">
@@ -337,12 +330,12 @@ export default function TypePartiePrenanteCrud() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="libelle">Libellé</Label>
+              <Label htmlFor="description">Description</Label>
               <Input
-                id="libelle"
-                value={formData.libelle}
+                id="description"
+                value={formData.description}
                 onChange={(e) =>
-                  setFormData({ ...formData, libelle: e.target.value })
+                  setFormData({ ...formData, description: e.target.value })
                 }
                 placeholder="Nom du type"
                 required
@@ -353,7 +346,7 @@ export default function TypePartiePrenanteCrud() {
             <Button variant="outline" onClick={() => setOpenAddDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleAddType}>
+            <Button type="submit" onClick={handleAddType} className="inwi_btn">
               Ajouter
             </Button>
           </DialogFooter>
@@ -374,14 +367,14 @@ export default function TypePartiePrenanteCrud() {
                   <div>{currentType.id}</div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-gray-500">Libellé</Label>
-                  <div>{currentType.libelle}</div>
+                  <Label className="text-gray-500">Description</Label>
+                  <div>{currentType.description}</div>
                 </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setOpenViewDialog(false)} className="bg-inwi-purple/80 hover:bg-inwi-purple">Fermer</Button>
+            <Button onClick={() => setOpenViewDialog(false)} className="inwi_btn">Fermer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -394,12 +387,12 @@ export default function TypePartiePrenanteCrud() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit_libelle">Libellé</Label>
+              <Label htmlFor="edit_description">Description</Label>
               <Input
-                id="edit_libelle"
-                value={formData.libelle}
+                id="edit_description"
+                value={formData.description}
                 onChange={(e) =>
-                  setFormData({ ...formData, libelle: e.target.value })
+                  setFormData({ ...formData, description: e.target.value })
                 }
                 placeholder="Nom du type"
                 required
@@ -410,7 +403,7 @@ export default function TypePartiePrenanteCrud() {
             <Button variant="outline" onClick={() => setOpenEditDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleEditType} className="bg-inwi-purple/80 hover:bg-inwi-purple">
+            <Button type="submit" onClick={handleEditType} className="inwi_btn">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -424,7 +417,7 @@ export default function TypePartiePrenanteCrud() {
             <DialogTitle>Supprimer le type de partie prenante</DialogTitle>
             <DialogDescription>
               Êtes-vous sûr de vouloir supprimer le type de partie prenante{" "}
-              <span className="font-semibold">{currentType?.libelle}</span> ?
+              <span className="font-semibold">{currentType?.description}</span> ?
               Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
@@ -435,7 +428,7 @@ export default function TypePartiePrenanteCrud() {
             >
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteType}>
+            <Button variant="destructive" onClick={handleDeleteType} className="inwi_btn">
               Supprimer
             </Button>
           </DialogFooter>

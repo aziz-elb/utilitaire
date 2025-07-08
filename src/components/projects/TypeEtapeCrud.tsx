@@ -44,15 +44,15 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
-import axios from "axios";
 import { cn } from "@/lib/utils";
-
-const API_URL = "http://localhost:8000/type_etape";
-
-type TypeEtape = {
-  id: string;
-  libelle: string;
-};
+import {
+  getTypeEtapes,
+  addTypeEtape,
+  updateTypeEtape,
+  deleteTypeEtape,
+  type TypeEtape,
+  type TypeEtapeInput,
+} from "@/services/typeEtapeService";
 
 export default function TypeEtapeCrud() {
   // États principaux
@@ -68,8 +68,8 @@ export default function TypeEtapeCrud() {
   const [currentType, setCurrentType] = useState<TypeEtape | null>(null);
 
   // États pour les champs du formulaire
-  const [formData, setFormData] = useState({
-    libelle: "",
+  const [formData, setFormData] = useState<TypeEtapeInput>({
+    description: "",
   });
 
   // Charger les données initiales
@@ -80,8 +80,8 @@ export default function TypeEtapeCrud() {
   const fetchTypesEtape = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setTypesEtape(response.data);
+      const data = await getTypeEtapes();
+      setTypesEtape(data);
     } catch (error) {
       toast.error("Erreur lors du chargement des types d'étape");
       console.error(error);
@@ -93,7 +93,7 @@ export default function TypeEtapeCrud() {
   // Réinitialiser le formulaire
   const resetForm = () => {
     setFormData({
-      libelle: "",
+      description: "",
     });
     setCurrentType(null);
   };
@@ -112,7 +112,7 @@ export default function TypeEtapeCrud() {
   const handleEditClick = (type: TypeEtape) => {
     setCurrentType(type);
     setFormData({
-      libelle: type.libelle,
+      description: type.description,
     });
     setOpenEditDialog(true);
   };
@@ -125,12 +125,10 @@ export default function TypeEtapeCrud() {
   // Opérations CRUD
   const handleAddType = async () => {
     try {
-      const newType = {
-        libelle: formData.libelle.toLowerCase().trim(),
-      };
-
-      const response = await axios.post(API_URL, newType);
-      setTypesEtape([...typesEtape, response.data]);
+      const newType = await addTypeEtape({
+        description: formData.description.trim(),
+      });
+      setTypesEtape([...typesEtape, newType]);
       setOpenAddDialog(false);
       resetForm();
       toast.success("Type d'étape ajouté avec succès");
@@ -144,16 +142,11 @@ export default function TypeEtapeCrud() {
     if (!currentType) return;
 
     try {
-      const updatedType = {
-        libelle: formData.libelle.toLowerCase().trim(),
-      };
-
-      const response = await axios.put(
-        `${API_URL}/${currentType.id}`,
-        updatedType
-      );
+      const updatedType = await updateTypeEtape(currentType.id, {
+        description: formData.description.trim(),
+      });
       const updatedTypes = typesEtape.map((t) =>
-        t.id === currentType.id ? response.data : t
+        t.id === currentType.id ? updatedType : t
       );
       setTypesEtape(updatedTypes);
       setOpenEditDialog(false);
@@ -169,7 +162,7 @@ export default function TypeEtapeCrud() {
     if (!currentType) return;
 
     try {
-      await axios.delete(`${API_URL}/${currentType.id}`);
+      await deleteTypeEtape(currentType.id);
       const filteredTypes = typesEtape.filter((t) => t.id !== currentType.id);
       setTypesEtape(filteredTypes);
       setOpenDeleteDialog(false);
@@ -187,10 +180,7 @@ export default function TypeEtapeCrud() {
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestion des types d'étape</h1>
-        <Button
-          onClick={handleAddClick}
-          className="bg-inwi-purple/80 hover:bg-inwi-purple"
-        >
+        <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
@@ -236,7 +226,7 @@ export default function TypeEtapeCrud() {
                   typesEtape.map((type) => (
                     <TableRow key={type.id}>
                       <TableCell>{type.id}</TableCell>
-                      <TableCell>{type.libelle}</TableCell>
+                      <TableCell>{type.description}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -293,7 +283,7 @@ export default function TypeEtapeCrud() {
                   className="hover:shadow-lg transition-shadow"
                 >
                   <CardHeader>
-                    <CardTitle>{type.libelle}</CardTitle>
+                    <CardTitle>{type.description}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-col space-y-1">
@@ -332,12 +322,12 @@ export default function TypeEtapeCrud() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="libelle">Libellé</Label>
+              <Label htmlFor="description">Libellé</Label>
               <Input
-                id="libelle"
-                value={formData.libelle}
+                id="description"
+                value={formData.description}
                 onChange={(e) =>
-                  setFormData({ ...formData, libelle: e.target.value })
+                  setFormData({ ...formData, description: e.target.value })
                 }
                 placeholder="Nom du type"
                 required
@@ -351,7 +341,7 @@ export default function TypeEtapeCrud() {
             <Button
               type="submit"
               onClick={handleAddType}
-              className="bg-inwi-purple/80 hover:bg-inwi-purple"
+              className="inwi_btn"
             >
               Ajouter
             </Button>
@@ -374,13 +364,13 @@ export default function TypeEtapeCrud() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-gray-500">Libellé</Label>
-                  <div>{currentType.libelle}</div>
+                  <div>{currentType.description}</div>
                 </div>
               </div>
             </div>
           )}
           <DialogFooter>
-            <Button onClick={() => setOpenViewDialog(false)} className="bg-inwi-purple/80 hover:bg-inwi-purple">Fermer</Button>
+            <Button onClick={() => setOpenViewDialog(false)} className="inwi_btn">Fermer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -393,12 +383,12 @@ export default function TypeEtapeCrud() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit_libelle">Libellé</Label>
+              <Label htmlFor="edit_description">Libellé</Label>
               <Input
-                id="edit_libelle"
-                value={formData.libelle}
+                id="edit_description"
+                value={formData.description}
                 onChange={(e) =>
-                  setFormData({ ...formData, libelle: e.target.value })
+                  setFormData({ ...formData, description: e.target.value })
                 }
                 placeholder="Nom du type"
                 required
@@ -409,7 +399,7 @@ export default function TypeEtapeCrud() {
             <Button variant="outline" onClick={() => setOpenEditDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleEditType} className="bg-inwi-purple/80 hover:bg-inwi-purple">
+            <Button type="submit" onClick={handleEditType} className="inwi_btn">
               Enregistrer
             </Button>
           </DialogFooter>
@@ -423,7 +413,7 @@ export default function TypeEtapeCrud() {
             <DialogTitle>Supprimer le type d'étape</DialogTitle>
             <DialogDescription>
               Êtes-vous sûr de vouloir supprimer le type d'étape{" "}
-              <span className="font-semibold">{currentType?.libelle}</span> ?
+              <span className="font-semibold">{currentType?.description}</span> ?
               Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
@@ -434,7 +424,7 @@ export default function TypeEtapeCrud() {
             >
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteType}>
+            <Button variant="destructive" onClick={handleDeleteType} className="inwi_btn">
               Supprimer
             </Button>
           </DialogFooter>

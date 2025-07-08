@@ -21,6 +21,11 @@ import Loading from "./Loading";
 
 import { particles  } from "@/components/ui_style/Particles";
 
+const DEFAULT_CREDENTIALS = {
+  email: 'usertest@gmail.com',
+  password: 'passwd',
+};
+
 const FeatureCard = ({
   icon,
   title,
@@ -35,81 +40,35 @@ const FeatureCard = ({
 );
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
-
-  const navigate = useNavigate();
   const { login } = useAuth();
+  const navigate = useNavigate();
+  const [form, setForm] = useState(DEFAULT_CREDENTIALS);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(false);
 
-  const checkUser = async (email: string, password: string) => {
-    email = email.trim().toLowerCase();
-
-    try {
-      const response = await fetch("http://localhost:8000/users");
-      if (!response.ok) throw new Error("Erreur réseau");
-
-      const users = await response.json();
-      const user = Object.values(users).find(
-        (u: any) => u.email === email && u.password === password
-      );
-
-      if (!user) return null;
-
-      return {
-        id: (user as any).id,
-        nom: (user as any).nom,
-        prenom: (user as any).prenom,
-        email: (user as any).email,
-        token: `fake-jwt-token-${(user as any).id}`,
-      };
-    } catch (error) {
-      console.error("Erreur lors de la vérification:", error);
-      return null;
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
+    setLoading(true);
+    setError(null);
     try {
-      const user = await checkUser(email, password);
-
-      if (!user) {
-        toast.error("Email ou mot de passe incorrect");
-        return;
-      }
-
-      login(user);
-
-      // Show loading screen before navigation
-      setIsAuthenticating(true);
-
-      // Simulate loading time (you can remove this in production)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      navigate("/");
-    } catch (error: any) {
-      toast.error("Une erreur est survenue : " + error.message);
+      await login(form.email, form.password);
+      navigate('/');
+    } catch (err: any) {
+      setError(err.message || 'Email ou mot de passe incorrect');
+      toast.error(err.message || 'Email ou mot de passe incorrect');
     } finally {
-      setIsLoading(false);
-      setIsAuthenticating(false); // Pour desavtiver
+      setLoading(false);
     }
   };
 
   const handleRememberMeChange = (checked: CheckedState) => {
     setRememberMe(checked === true);
   };
-
-  // Show loading screen during authentication
-  if (isAuthenticating) {
-    return <Loading />;
-  }
-
-  
 
   return (
     <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
@@ -217,12 +176,13 @@ const Login = () => {
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="votre@email.com"
                   required
                   className="pl-10"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={form.email}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -232,12 +192,13 @@ const Login = () => {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="password"
+                  name="password"
                   type="password"
                   required
                   className="pl-10"
                   placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={form.password}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -262,12 +223,13 @@ const Login = () => {
                 Mot de passe oublié?
               </Link>
             </div>
+            {error && <div className="text-red-500 mb-2 text-sm">{error}</div>}
             <Button
               type="submit"
               className="w-full bg-inwi-purple hover:bg-inwi-dark-purple text-white"
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? "Connexion..." : "Se connecter"}
+              {loading ? "Connexion..." : "Se connecter"}
             </Button>
           </form>
         </div>

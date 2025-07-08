@@ -60,33 +60,27 @@ import {
   ShieldMinus,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
-import axios from "axios";
 import { cn } from "@/lib/utils";
+import {
+  getMembres,
+  addMembre,
+  updateMembrePartial,
+  deleteMembre,
+  type Membre as ServiceMembre,
+  type MembreInput,
+} from "@/services/membreService";
+import { getRoles, type Role as ServiceRole } from "@/services/roleService";
 
-const API_URL = "http://localhost:8000/membre";
-
-type Membre = {
-  id: string;
-  keycloak_user_id: string;
-  fk_type_membre_id: string;
-  nom_prenom: string;
-  email: string;
-  telephone: string;
-  fk_entite_id: string;
-  fk_fonction_id: string;
-  interne_yn: boolean;
-  date_creation: string;
-  profile_picture_url: string;
-  actif_yn: boolean;
-  last_login?: string;
-  projets_count?: number;
-};
+// Use the Membre type from the service
+type Membre = ServiceMembre;
+type Role = ServiceRole;
 
 interface MembreCrudProps {
   membres: Membre[];
-  fonctions: Fonction[];
-  entites: Entite[];
-  typesMembre: TypeMembre[];
+  fonctions: any[];
+  entites: any[];
+  typesMembre: any[];
+  roles: Role[];
   loading: boolean;
   onMembreUpdated: (membres: Membre[]) => void;
 }
@@ -96,6 +90,7 @@ export default function MembreCrud({
   fonctions,
   entites,
   typesMembre,
+  roles,
   loading,
   onMembreUpdated,
 }: MembreCrudProps) {
@@ -110,22 +105,19 @@ export default function MembreCrud({
   const [currentMembre, setCurrentMembre] = useState<Membre | null>(null);
 
   // État du formulaire
-  const [formData, setFormData] = useState<
-    Omit<Membre, "id" | "date_creation">
-  >({
-    keycloak_user_id: "",
-    fk_type_membre_id: "",
-    nom_prenom: "",
+  const [formData, setFormData] = useState<MembreInput>({
+    nomPrenom: "",
     email: "",
     telephone: "",
-    fk_entite_id: "",
-    fk_fonction_id: "",
-    interne_yn: false,
-    profile_picture_url: "",
-    actif_yn: true,
+    interneYn: true,
+    actifYn: true,
+    role: "USER",
+    photoProfile: "",
+    password: "",
+    typeMembreId: "",
+    entiteId: "",
+    fonctionId: "",
   });
-
-  // Charger les données initiales
 
   // Fonctions utilitaires
   const getInitials = (name: string) => {
@@ -144,17 +136,17 @@ export default function MembreCrud({
   };
 
   const getEntityName = (id: string) => {
-    const entity = entites.find((e) => e.id === id);
+    const entity = entites.find((e) => e.entiteId === id);
     return entity ? entity.titre : "Inconnu";
   };
 
   const getFonctionName = (id: string) => {
-    const fonction = fonctions.find((f) => f.id === id);
+    const fonction = fonctions.find((f) => f.fonctionId === id);
     return fonction ? fonction.libelle : "Inconnu";
   };
 
   const getTypeMembreName = (id: string) => {
-    const type = typesMembre.find((t) => t.id === id);
+    const type = typesMembre.find((t) => t.typeMembreId === id);
     return type ? type.libelle : "Inconnu";
   };
 
@@ -168,22 +160,57 @@ export default function MembreCrud({
       : "bg-purple-100 text-purple-800";
   };
 
-  // Opérations CRUD (identique à la version précédente)
-  // ... (handleAddClick, handleViewClick, handleEditClick, handleDeleteClick, etc.)
+  const getRoleName = (id: string) => {
+    const role = roles.find((r) => r.id === id);
+    return role ? role.name : "Inconnu";
+  };
+
+  // Add a utility for badge color harmony
+  const getFonctionBadgeColor = (fonctionId: string) => {
+    // Example: assign colors based on fonctionId hash or known ids
+    const colors = [
+      'bg-blue-100 text-blue-800',
+      'bg-purple-100 text-purple-800',
+      'bg-green-100 text-green-800',
+      'bg-pink-100 text-pink-800',
+      'bg-yellow-100 text-yellow-800',
+      'bg-orange-100 text-orange-800',
+    ];
+    if (!fonctionId) return 'bg-gray-100 text-gray-800';
+    let hash = 0;
+    for (let i = 0; i < fonctionId.length; i++) hash += fonctionId.charCodeAt(i);
+    return colors[hash % colors.length];
+  };
+  const getTypeBadgeColor = (typeId: string) => {
+    // Example: assign colors based on typeId hash or known ids
+    const colors = [
+      'bg-purple-100 text-purple-800',
+      'bg-blue-100 text-blue-800',
+      'bg-green-100 text-green-800',
+      'bg-pink-100 text-pink-800',
+      'bg-yellow-100 text-yellow-800',
+      'bg-orange-100 text-orange-800',
+    ];
+    if (!typeId) return 'bg-gray-100 text-gray-800';
+    let hash = 0;
+    for (let i = 0; i < typeId.length; i++) hash += typeId.charCodeAt(i);
+    return colors[hash % colors.length];
+  };
 
   // Gestion des formulaires
   const resetForm = () => {
     setFormData({
-      keycloak_user_id: "",
-      fk_type_membre_id: "",
-      nom_prenom: "",
+      nomPrenom: "",
       email: "",
       telephone: "",
-      fk_entite_id: "",
-      fk_fonction_id: "",
-      interne_yn: false,
-      profile_picture_url: "",
-      actif_yn: true,
+      interneYn: true,
+      actifYn: true,
+      role: "USER",
+      photoProfile: "",
+      password: "",
+      typeMembreId: "",
+      entiteId: "",
+      fonctionId: "",
     });
     setCurrentMembre(null);
   };
@@ -202,16 +229,17 @@ export default function MembreCrud({
   const handleEditClick = (membre: Membre) => {
     setCurrentMembre(membre);
     setFormData({
-      keycloak_user_id: membre.keycloak_user_id,
-      fk_type_membre_id: membre.fk_type_membre_id,
-      nom_prenom: membre.nom_prenom,
+      nomPrenom: membre.nomPrenom,
       email: membre.email,
       telephone: membre.telephone,
-      fk_entite_id: membre.fk_entite_id,
-      fk_fonction_id: membre.fk_fonction_id,
-      interne_yn: membre.interne_yn,
-      profile_picture_url: membre.profile_picture_url,
-      actif_yn: membre.actif_yn,
+      interneYn: membre.interneYn,
+      actifYn: membre.actifYn,
+      role: membre.role,
+      photoProfile: membre.profilePictureUrl,
+      password: "",
+      typeMembreId: membre.typeMembreId,
+      entiteId: membre.entiteId,
+      fonctionId: membre.fonctionId,
     });
     setOpenEditDialog(true);
   };
@@ -220,17 +248,13 @@ export default function MembreCrud({
     setCurrentMembre(membre);
     setOpenDeleteDialog(true);
   };
+
   // Opérations CRUD
   const handleAddMembre = async () => {
     try {
-      const response = await axios.post(API_URL, {
-        ...formData,
-        date_creation: new Date().toISOString(),
-      });
-
-      const newMembres = [...membres, response.data];
-      onMembreUpdated(newMembres);
-
+      await addMembre(formData);
+      const updatedMembres = await getMembres();
+      onMembreUpdated(updatedMembres);
       setOpenAddDialog(false);
       resetForm();
       toast.success("Membre ajouté avec succès");
@@ -244,16 +268,9 @@ export default function MembreCrud({
     if (!currentMembre) return;
 
     try {
-      const response = await axios.put(
-        `${API_URL}/${currentMembre.id}`,
-        formData
-      );
-
-      const updatedMembres = membres.map((m) =>
-        m.id === currentMembre.id ? response.data : m
-      );
+      await updateMembrePartial(currentMembre.id, formData);
+      const updatedMembres = await getMembres();
       onMembreUpdated(updatedMembres);
-
       setOpenEditDialog(false);
       resetForm();
       toast.success("Membre modifié avec succès");
@@ -267,11 +284,9 @@ export default function MembreCrud({
     if (!currentMembre) return;
 
     try {
-      await axios.delete(`${API_URL}/${currentMembre.id}`);
-
-      const filteredMembres = membres.filter((m) => m.id !== currentMembre.id);
-      onMembreUpdated(filteredMembres);
-
+      await deleteMembre(currentMembre.id);
+      const updatedMembres = await getMembres();
+      onMembreUpdated(updatedMembres);
       setOpenDeleteDialog(false);
       resetForm();
       toast.success("Membre supprimé avec succès");
@@ -284,25 +299,17 @@ export default function MembreCrud({
   // Fonction pour activer/désactiver un membre
   const handleToggleStatus = async (membre: Membre) => {
     try {
-      const newStatus = !membre.actif_yn;
-      const response = await axios.patch(`${API_URL}/${membre.id}`, {
-        actif_yn: newStatus,
-      });
-
-      // Mettre à jour l'état local
-      setMembres(
-        membres.map((m) =>
-          m.id === membre.id ? { ...m, actif_yn: newStatus } : m
-        )
-      );
-
+      const newStatus = !membre.actifYn;
+      await updateMembrePartial(membre.id, { actifYn: newStatus });
+      const updatedMembres = await getMembres();
+      onMembreUpdated(updatedMembres);
       toast.success(
         newStatus ? "Membre activé avec succès" : "Membre désactivé avec succès"
       );
     } catch (error) {
       toast.error(
         `Erreur lors de ${
-          membre.actif_yn ? "la désactivation" : "l'activation"
+          membre.actifYn ? "la désactivation" : "l'activation"
         } du membre`
       );
       console.error(error);
@@ -315,7 +322,7 @@ export default function MembreCrud({
 
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestion des membres</h1>
-        <Button onClick={() => setOpenAddDialog(true)} className="inwiButton">
+        <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
@@ -334,7 +341,7 @@ export default function MembreCrud({
         </TabsList>
 
         <TabsContent value="table">
-          {/* Tableau des membres (identique à la version précédente) */}
+          {/* Tableau des membres */}
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
@@ -366,27 +373,33 @@ export default function MembreCrud({
                     <TableRow key={membre.id}>
                       <TableCell>
                         <Avatar>
-                          <AvatarImage src={membre.profile_picture_url} />
+                          <AvatarImage src={membre.profilePictureUrl} />
                           <AvatarFallback>
-                            {getInitials(membre.nom_prenom)}
+                            {getInitials(membre.nomPrenom)}
                           </AvatarFallback>
                         </Avatar>
                       </TableCell>
-                      <TableCell>{membre.nom_prenom}</TableCell>
+                      <TableCell>{membre.nomPrenom}</TableCell>
                       <TableCell>{membre.email}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="bg-blue-400/20 text-blue-800">
-                          {getFonctionName(membre.fk_fonction_id)}
+                        <Badge
+                          variant="secondary"
+                          className="bg-blue-400/20 text-blue-800"
+                        >
+                          {getFonctionName(membre.fonctionId)}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="bg-inwi-tertiary/20 text-inwi-dark-purple">
-                          {getEntityName(membre.fk_entite_id)}
+                        <Badge
+                          variant="secondary"
+                          className="bg-inwi-tertiary/20 text-inwi-dark-purple"
+                        >
+                          {getEntityName(membre.entiteId)}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(membre.actif_yn)}>
-                          {membre.actif_yn ? "Actif" : "Inactif"}
+                        <Badge className={getStatusColor(membre.actifYn)}>
+                          {membre.actifYn ? "Actif" : "Inactif"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -397,17 +410,31 @@ export default function MembreCrud({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent className="bg-white">
-                            <DropdownMenuItem
-                              onClick={() => handleViewClick(membre)}
-                            >
+                            <DropdownMenuItem onClick={() => handleViewClick(membre)}>
                               <Eye className="h-4 w-4 mr-2" />
                               Voir détails
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleEditClick(membre)}
-                            >
+                            <DropdownMenuItem onClick={() => handleEditClick(membre)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleToggleStatus(membre)}
+                              className={cn(
+                                membre.actifYn ? "text-red-600" : "text-green-600"
+                              )}
+                            >
+                              {membre.actifYn ? (
+                                <>
+                                  <BadgeX className="h-4 w-4 mr-2" />
+                                  Désactiver
+                                </>
+                              ) : (
+                                <>
+                                  <BadgeCheck className="h-4 w-4 mr-2" />
+                                  Activer
+                                </>
+                              )}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleDeleteClick(membre)}
@@ -415,21 +442,6 @@ export default function MembreCrud({
                             >
                               <Archive className="h-4 w-4 mr-2" />
                               Supprimer
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className={cn(
-                                membre.actif_yn
-                                  ? "text-red-500"
-                                  : "text-green-500"
-                              )}
-                              onClick={() => handleToggleStatus(membre)}
-                            >
-                              {membre.actif_yn ? (
-                                <ShieldMinus className="h-4 w-4 mr-2" />
-                              ) : (
-                                <ShieldCheck className="h-4 w-4 mr-2" />
-                              )}
-                              {membre.actif_yn ? "Désactiver" : "Activer"}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -443,40 +455,22 @@ export default function MembreCrud({
         </TabsContent>
 
         <TabsContent value="cards">
-          {/* Affichage en cartes */}
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <p>Chargement des membres...</p>
-            </div>
-          ) : membres.length === 0 ? (
-            <div className="flex justify-center py-8">
-              <p>Aucun membre disponible</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          {/* Vue en cartes */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {membres.map((membre) => (
-                <Card
-                  key={membre.id}
-                  className="hover:shadow-lg transition-shadow"
-                >
+              <Card key={membre.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-3">
                         <Avatar className="h-12 w-12">
-                          <AvatarImage
-                            src={membre.profile_picture_url || undefined}
-                          />
-                          <AvatarFallback className="bg-gradient-to-r from-inwi-purple/60 to-inwi-dark-purple text-white">
-                            {getInitials(membre.nom_prenom)}
+                        <AvatarImage src={membre.profilePictureUrl} />
+                        <AvatarFallback className="bg-gradient-to-r from-inwi-dark-purple to-inwi-secondary-color text-white">
+                          {getInitials(membre.nomPrenom)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <CardTitle className="text-lg">
-                            {membre.nom_prenom}
-                          </CardTitle>
-                          <p className="text-sm text-gray-600">
-                            {getFonctionName(membre.fk_fonction_id)}
-                          </p>
+                        <CardTitle className="text-lg">{membre.nomPrenom}</CardTitle>
+                        <p className="text-sm text-gray-600">{membre.email}</p>
                         </div>
                       </div>
                       <DropdownMenu>
@@ -486,47 +480,49 @@ export default function MembreCrud({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem
-                            onClick={() => handleViewClick(membre)}
-                          >
-                            <Eye className="h-4 w-4 mr-2" /> Voir profil
+                        <DropdownMenuItem onClick={() => handleViewClick(membre)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          Voir détails
+                          </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditClick(membre)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Modifier
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => handleEditClick(membre)}
-                          >
-                            <Edit className="h-4 w-4 mr-2" /> Modifier
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => handleDeleteClick(membre)}
-                          >
-                            <Archive className="h-4 w-4 mr-2" /> Supprimer
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
+                          onClick={() => handleToggleStatus(membre)}
                             className={cn(
-                              membre.actif_yn
-                                ? "text-red-500"
-                                : "text-green-500"
-                            )}
-                            onClick={() => handleToggleStatus(membre)}
-                          >
-                            {membre.actif_yn ? (
-                              <ShieldMinus className="h-4 w-4 mr-2" />
-                            ) : (
-                              <ShieldCheck className="h-4 w-4 mr-2" />
-                            )}
-                            {membre.actif_yn ? "Désactiver" : "Activer"}
+                            membre.actifYn ? "text-red-600" : "text-green-600"
+                          )}
+                        >
+                          {membre.actifYn ? (
+                            <>
+                              <BadgeX className="h-4 w-4 mr-2" />
+                              Désactiver
+                            </>
+                          ) : (
+                            <>
+                              <BadgeCheck className="h-4 w-4 mr-2" />
+                              Activer
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDeleteClick(membre)}
+                          className="text-red-600"
+                        >
+                          <Archive className="h-4 w-4 mr-2" />
+                          Supprimer
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
 
                     <div className="flex items-center space-x-2 mt-3">
-                      <Badge className={getStatusColor(membre.actif_yn)}>
-                        {membre.actif_yn ? "Actif" : "Inactif"}
+                    <Badge className={getStatusColor(membre.actifYn)}>
+                      {membre.actifYn ? "Actif" : "Inactif"}
                       </Badge>
-                      <Badge className={getTypeColor(membre.interne_yn)}>
-                        {membre.interne_yn ? "Interne" : "Externe"}
+                    <Badge className={getTypeColor(membre.interneYn)}>
+                      {membre.interneYn ? "Interne" : "Externe"}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -540,202 +536,198 @@ export default function MembreCrud({
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <Phone className="h-4 w-4 mr-2" />
-                        <span>{membre.telephone || "Non renseigné"}</span>
+                      <span>{membre.telephone}</span>
                       </div>
                       <div className="flex items-center text-sm text-gray-600">
                         <Building className="h-4 w-4 mr-2" />
-                        <span className="truncate">
-                          {getEntityName(membre.fk_entite_id)}
-                        </span>
+                      <span className="truncate">{getEntityName(membre.entiteId)}</span>
                       </div>
                     </div>
 
                     {/* Stats */}
                     <div className="flex items-center justify-between pt-3 border-t">
-                      <div className="text-center">
-                        <div className="text-lg font-semibold text-gray-900">
-                          {membre.projets_count || 0}
-                        </div>
-                        <div className="text-xs text-gray-600">Projets</div>
+                      <div className="flex flex-col items-center">
+                        <Badge className={getFonctionBadgeColor(membre.fonctionId)}>
+                          {getFonctionName(membre.fonctionId)}
+                        </Badge>
+                        <div className="text-xs text-gray-600 mt-1">Fonction</div>
                       </div>
-                      <div className="text-center">
-                        <div className="text-sm font-medium text-gray-900">
-                          {getTypeMembreName(membre.fk_type_membre_id)}
-                        </div>
-                        <div className="text-xs text-gray-600">Type membre</div>
+                      <div className="flex flex-col items-center">
+                        <Badge className={getTypeBadgeColor(membre.typeMembreId)}>
+                          {getTypeMembreName(membre.typeMembreId)}
+                        </Badge>
+                        <div className="text-xs text-gray-600 mt-1">Type</div>
                       </div>
                     </div>
-
-                    {/* Last Login */}
-                    {membre.last_login && (
-                      <div className="pt-2 border-t">
-                        <div className="flex items-center text-xs text-gray-500">
-                          <UserCheck className="h-3 w-3 mr-1" />
-                          <span>
-                            Date Creation : {formatDate(membre.date_creation)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               ))}
             </div>
-          )}
         </TabsContent>
       </Tabs>
 
       {/* Modale d'ajout */}
       <Dialog open={openAddDialog} onOpenChange={setOpenAddDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Ajouter un membre</DialogTitle>
+            <DialogDescription>
+              Remplissez les champs pour ajouter un nouveau membre.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="nom_prenom">Nom Prénom</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="nomPrenom" className="text-right">
+                Nom Prénom
+              </Label>
                 <Input
-                  id="nom_prenom"
-                  value={formData.nom_prenom}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nom_prenom: e.target.value })
-                  }
-                  placeholder="Nom Prénom"
-                  required
+                id="nomPrenom"
+                value={formData.nomPrenom}
+                onChange={(e) => setFormData({ ...formData, nomPrenom: e.target.value })}
+                className="col-span-3"
+                placeholder="Ex : Nom Prenom"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="email" className="text-right">
+                Email
+              </Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  placeholder="Email"
-                  required
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="col-span-3"
+                placeholder="Ex: example@gmail.com"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="telephone">Téléphone</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="telephone" className="text-right">
+                Téléphone
+              </Label>
                 <Input
                   id="telephone"
                   value={formData.telephone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, telephone: e.target.value })
-                  }
-                  placeholder="Téléphone"
+                onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                className="col-span-3"
+                placeholder="Ex: 0641946723"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="profile_picture_url">Photo de profil</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="password" className="text-right">
+                Mot de passe
+              </Label>
                 <Input
-                  id="profile_picture_url"
-                  value={formData.profile_picture_url}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      profile_picture_url: e.target.value,
-                    })
-                  }
-                  placeholder="URL de la photo"
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                className="col-span-3"
+                placeholder="Ex : Inwi_321"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="keycloak_user_id">Keycloak ID</Label>
-                <Input
-                  id="keycloak_user_id"
-                  value={formData.keycloak_user_id}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      keycloak_user_id: e.target.value,
-                    })
-                  }
-                  placeholder="Keycloak User ID"
-                />
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="role" className="text-right">
+                Rôle
+              </Label>
+              <Select
+                value={formData.role}
+                onValueChange={(value) => setFormData({ ...formData, role: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un rôle" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="fk_type_membre_id">Type de membre</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="typeMembreId" className="text-right">
+                Type de membre
+              </Label>
                 <Select
-                  value={formData.fk_type_membre_id}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, fk_type_membre_id: value })
-                  }
-                >
-                  <SelectTrigger>
+                value={formData.typeMembreId}
+                onValueChange={(value) => setFormData({ ...formData, typeMembreId: value })}
+              >
+                <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Sélectionner un type" />
                   </SelectTrigger>
                   <SelectContent>
                     {typesMembre.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>
+                    <SelectItem key={type.typeMembreId} value={type.typeMembreId}>
                         {type.libelle}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="fk_fonction_id">Fonction</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="entiteId" className="text-right">
+                Entité
+              </Label>
                 <Select
-                  value={formData.fk_fonction_id}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, fk_fonction_id: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une fonction" />
+                value={formData.entiteId}
+                onValueChange={(value) => setFormData({ ...formData, entiteId: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner une entité" />
                   </SelectTrigger>
                   <SelectContent>
-                    {fonctions.map((fonction) => (
-                      <SelectItem key={fonction.id} value={fonction.id}>
-                        {fonction.libelle}
+                  {entites.map((entite) => (
+                    <SelectItem key={entite.entiteId} value={entite.entiteId}>
+                      {entite.titre}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="fk_entite_id">Entité</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="fonctionId" className="text-right">
+                Fonction
+              </Label>
                 <Select
-                  value={formData.fk_entite_id}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, fk_entite_id: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une entité" />
+                value={formData.fonctionId}
+                onValueChange={(value) => setFormData({ ...formData, fonctionId: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner une fonction" />
                   </SelectTrigger>
                   <SelectContent>
-                    {entites.map((entite) => (
-                      <SelectItem key={entite.id} value={entite.id}>
-                        {entite.titre}
+                  {fonctions.map((fonction) => (
+                    <SelectItem key={fonction.fonctionId} value={fonction.fonctionId}>
+                      {fonction.libelle}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center space-x-2 pt-6">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="interneYn" className="text-right">
+                Interne
+              </Label>
+              <div className="col-span-3">
                 <Switch
-                  id="interne"
-                  checked={formData.interne_yn}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, interne_yn: checked })
-                  }
+                  id="interneYn"
+                  checked={formData.interneYn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, interneYn: checked })}
                 />
-                <Label htmlFor="interne">Interne</Label>
               </div>
-              <div className="flex items-center space-x-2 pt-6">
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="actifYn" className="text-right">
+                Actif
+              </Label>
+              <div className="col-span-3">
                 <Switch
-                  id="actif"
-                  checked={formData.actif_yn}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, actif_yn: checked })
-                  }
+                  id="actifYn"
+                  checked={formData.actifYn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, actifYn: checked })}
                 />
-                <Label htmlFor="actif">Actif</Label>
               </div>
             </div>
           </div>
@@ -743,7 +735,7 @@ export default function MembreCrud({
             <Button variant="outline" onClick={() => setOpenAddDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleAddMembre}>
+            <Button type="submit" onClick={handleAddMembre} className="inwi_btn">
               Ajouter
             </Button>
           </DialogFooter>
@@ -755,252 +747,217 @@ export default function MembreCrud({
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Détails du membre</DialogTitle>
+            <DialogDescription>
+              Visualisez les informations du membre sélectionné.
+            </DialogDescription>
           </DialogHeader>
-          {currentMembre && (
             <div className="grid gap-4 py-4">
-              <div className="flex items-center space-x-4">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={currentMembre.profile_picture_url} />
-                  <AvatarFallback>
-                    {getInitials(currentMembre.nom_prenom)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-lg font-semibold">
-                    {currentMembre.nom_prenom}
-                  </h3>
-                  <p className="text-sm text-gray-500">{currentMembre.email}</p>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">ID</Label>
+              <div className="col-span-3">{currentMembre?.id}</div>
                 </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Nom Prénom</Label>
+              <div className="col-span-3">{currentMembre?.nomPrenom}</div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label className="text-gray-500">ID</Label>
-                  <div>{currentMembre.id}</div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Email</Label>
+              <div className="col-span-3">{currentMembre?.email}</div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-gray-500">Keycloak ID</Label>
-                  <div>{currentMembre.keycloak_user_id || "-"}</div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Téléphone</Label>
+              <div className="col-span-3">{currentMembre?.telephone}</div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-gray-500">Téléphone</Label>
-                  <div>{currentMembre.telephone || "-"}</div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Rôle</Label>
+              <div className="col-span-3">{currentMembre ? getRoleName(currentMembre.role) : ""}</div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-gray-500">Type de membre</Label>
-                  <div>
-                    {getTypeMembreName(currentMembre.fk_type_membre_id)}
-                  </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Type de membre</Label>
+              <div className="col-span-3">{currentMembre ? getTypeMembreName(currentMembre.typeMembreId) : ""}</div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-gray-500">Fonction</Label>
-                  <div>{getFonctionName(currentMembre.fk_fonction_id)}</div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Entité</Label>
+              <div className="col-span-3">{currentMembre ? getEntityName(currentMembre.entiteId) : ""}</div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-gray-500">Entité</Label>
-                  <div>{getEntityName(currentMembre.fk_entite_id)}</div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Fonction</Label>
+              <div className="col-span-3">{currentMembre ? getFonctionName(currentMembre.fonctionId) : ""}</div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-gray-500">Interne</Label>
-                  <div>{currentMembre.interne_yn ? "Oui" : "Non"}</div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Interne</Label>
+              <div className="col-span-3">{currentMembre?.interneYn ? "Oui" : "Non"}</div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-gray-500">Actif</Label>
-                  <div>{currentMembre.actif_yn ? "Oui" : "Non"}</div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Actif</Label>
+              <div className="col-span-3">{currentMembre?.actifYn ? "Oui" : "Non"}</div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-gray-500">Date de création</Label>
-                  <div>{formatDate(currentMembre.date_creation)}</div>
                 </div>
-              </div>
-            </div>
-          )}
           <DialogFooter>
-            <Button onClick={() => setOpenViewDialog(false)}>Fermer</Button>
+            <Button onClick={() => setOpenViewDialog(false)} className="inwi_btn">
+              Fermer
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Modale d'édition */}
-      <Dialog
-        open={openEditDialog}
-        onOpenChange={(isOpen) => {
-          setOpenEditDialog(isOpen);
-          if (!isOpen) {
-            resetForm();
-          }
-        }}
-      >
-        <DialogContent className="max-w-2xl">
+      <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Modifier le membre</DialogTitle>
+            <DialogDescription>
+              Modifiez les champs puis cliquez sur "Enregistrer" pour sauvegarder les changements.
+            </DialogDescription>
           </DialogHeader>
-          {currentMembre && (
-            <>
               <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit_nom_prenom">Nom Prénom</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-nomPrenom" className="text-right">
+                Nom Prénom
+              </Label>
                     <Input
-                      id="edit_nom_prenom"
-                      value={formData.nom_prenom}
-                      onChange={(e) =>
-                        setFormData({ ...formData, nom_prenom: e.target.value })
-                      }
-                      placeholder="Nom Prénom"
-                      required
+                id="edit-nomPrenom"
+                value={formData.nomPrenom}
+                onChange={(e) => setFormData({ ...formData, nomPrenom: e.target.value })}
+                className="col-span-3"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit_email">Email</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-email" className="text-right">
+                Email
+              </Label>
                     <Input
-                      id="edit_email"
+                id="edit-email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) =>
-                        setFormData({ ...formData, email: e.target.value })
-                      }
-                      placeholder="Email"
-                      required
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="col-span-3"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit_telephone">Téléphone</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-telephone" className="text-right">
+                Téléphone
+              </Label>
                     <Input
-                      id="edit_telephone"
+                id="edit-telephone"
                       value={formData.telephone}
-                      onChange={(e) =>
-                        setFormData({ ...formData, telephone: e.target.value })
-                      }
-                      placeholder="Téléphone"
+                onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
+                className="col-span-3"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit_profile_picture_url">
-                      Photo de profil
-                    </Label>
-                    <Input
-                      id="edit_profile_picture_url"
-                      value={formData.profile_picture_url}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          profile_picture_url: e.target.value,
-                        })
-                      }
-                      placeholder="URL de la photo"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit_keycloak_user_id">Keycloak ID</Label>
-                    <Input
-                      id="edit_keycloak_user_id"
-                      value={formData.keycloak_user_id}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          keycloak_user_id: e.target.value,
-                        })
-                      }
-                      placeholder="Keycloak User ID"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit_fk_type_membre_id">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-typeMembreId" className="text-right">
                       Type de membre
                     </Label>
                     <Select
-                      value={formData.fk_type_membre_id}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, fk_type_membre_id: value })
-                      }
-                    >
-                      <SelectTrigger>
+                value={formData.typeMembreId}
+                onValueChange={(value) => setFormData({ ...formData, typeMembreId: value })}
+              >
+                <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Sélectionner un type" />
                       </SelectTrigger>
                       <SelectContent>
                         {typesMembre.map((type) => (
-                          <SelectItem key={type.id} value={type.id}>
+                    <SelectItem key={type.typeMembreId} value={type.typeMembreId}>
                             {type.libelle}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit_fk_fonction_id">Fonction</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-entiteId" className="text-right">
+                Entité
+              </Label>
                     <Select
-                      value={formData.fk_fonction_id}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, fk_fonction_id: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner une fonction" />
+                value={formData.entiteId}
+                onValueChange={(value) => setFormData({ ...formData, entiteId: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner une entité" />
                       </SelectTrigger>
                       <SelectContent>
-                        {fonctions.map((fonction) => (
-                          <SelectItem key={fonction.id} value={fonction.id}>
-                            {fonction.libelle}
+                  {entites.map((entite) => (
+                    <SelectItem key={entite.entiteId} value={entite.entiteId}>
+                      {entite.titre}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit_fk_entite_id">Entité</Label>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-fonctionId" className="text-right">
+                Fonction
+              </Label>
                     <Select
-                      value={formData.fk_entite_id}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, fk_entite_id: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner une entité" />
+                value={formData.fonctionId}
+                onValueChange={(value) => setFormData({ ...formData, fonctionId: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner une fonction" />
                       </SelectTrigger>
                       <SelectContent>
-                        {entites.map((entite) => (
-                          <SelectItem key={entite.id} value={entite.id}>
-                            {entite.titre}
+                  {fonctions.map((fonction) => (
+                    <SelectItem key={fonction.fonctionId} value={fonction.fonctionId}>
+                      {fonction.libelle}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="flex items-center space-x-2 pt-6">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-interneYn" className="text-right">
+                Interne
+              </Label>
+              <div className="col-span-3">
                     <Switch
-                      id="edit_interne"
-                      checked={formData.interne_yn}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, interne_yn: checked })
-                      }
-                    />
-                    <Label htmlFor="edit_interne">Interne</Label>
+                  id="edit-interneYn"
+                  checked={formData.interneYn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, interneYn: checked })}
+                />
                   </div>
-                  <div className="flex items-center space-x-2 pt-6">
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-actifYn" className="text-right">
+                Actif
+              </Label>
+              <div className="col-span-3">
                     <Switch
-                      id="edit_actif"
-                      checked={formData.actif_yn}
-                      onCheckedChange={(checked) =>
-                        setFormData({ ...formData, actif_yn: checked })
-                      }
-                    />
-                    <Label htmlFor="edit_actif">Actif</Label>
+                  id="edit-actifYn"
+                  checked={formData.actifYn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, actifYn: checked })}
+                />
                   </div>
+                </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-role" className="text-right">
+                Rôle
+              </Label>
+              <Select
+                value={formData.role}
+                onValueChange={(value) => setFormData({ ...formData, role: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Sélectionner un rôle" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
                 </div>
               </div>
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setOpenEditDialog(false)}
-                >
+            <Button variant="outline" onClick={() => setOpenEditDialog(false)}>
                   Annuler
                 </Button>
-                <Button type="submit" onClick={handleEditMembre}>
+                <Button type="submit" onClick={handleEditMembre} className="inwi_btn">
                   Enregistrer
                 </Button>
               </DialogFooter>
-            </>
-          )}
         </DialogContent>
       </Dialog>
 
@@ -1011,18 +968,19 @@ export default function MembreCrud({
             <DialogTitle>Supprimer le membre</DialogTitle>
             <DialogDescription>
               Êtes-vous sûr de vouloir supprimer le membre{" "}
-              <span className="font-semibold">{currentMembre?.nom_prenom}</span>{" "}
-              ? Cette action est irréversible.
+              <span className="font-semibold">{currentMembre?.nomPrenom}</span> ?
+              Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setOpenDeleteDialog(false)}
+              
             >
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteMembre}>
+            <Button variant="destructive" onClick={handleDeleteMembre} className="inwi_btn">
               Supprimer
             </Button>
           </DialogFooter>
