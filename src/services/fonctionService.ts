@@ -1,7 +1,7 @@
 import api from './api';
 
 export interface Fonction {
-  fonctionId: string;
+  id: string;
   libelle: string;
 }
 
@@ -10,16 +10,16 @@ export const getFonctions = async (): Promise<Fonction[]> => {
   return response.data;
 };
 
-export const addFonction = async (fonction: Omit<Fonction, 'fonctionId'>): Promise<Fonction> => {
+export const addFonction = async (fonction: Omit<Fonction, 'id'>): Promise<Fonction> => {
   const { data } = await api.post<Fonction>('/fonctions', fonction);
   return data;
 };
 
 export const updateFonction = async (fonction: Fonction): Promise<Fonction> => {
-  const { data } = await api.put<Fonction>(`/fonctions/${fonction.fonctionId}`, fonction);
+  const { data } = await api.put<Fonction>(`/fonctions/${fonction.id}`, fonction);
   return data;
 };
 
-export const deleteFonction = async (fonctionId: string): Promise<void> => {
-  await api.delete(`/fonctions/${fonctionId}`);
+export const deleteFonction = async (id: string): Promise<void> => {
+  await api.delete(`/fonctions/${id}`);
 }; 

@@ -2,11 +2,11 @@ import api from './api';
 
 export interface StatutEtape {
   id: string;
-  description: string;
+  libelle: string;
 }
 
 export interface StatutEtapeInput {
-  description: string;
+  libelle: string;
 }
 
 export const getStatutEtapes = async (): Promise<StatutEtape[]> => {

@@ -15,27 +15,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Users, Mail, Star } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Plus, Trash2, Users, Mail, Star, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { getMembres } from "@/services/membreService";
 import { getTypePartiePrenantes } from "@/services/typePartiePrenanteService";
 import { getNiveauInfluences } from "@/services/niveauInfluenceService";
-import api from "@/services/api";
+import {
+  getPartiesPrenantesByProjet,
+  createPartiePrenante,
+  updatePartiePrenante,
+  deletePartiePrenante,
+  type ProjetPartiePrenante,
+} from "@/services/partiePrenanteProjetService";
 
 interface PartiesPrenantesTabProps {
   projetId: string;
-}
-
-interface ProjetPartiePrenante {
-  id: string;
-  projetId: string;
-  membreEmail: string;
-  typePartiePrenanteId: string;
-  niveauInfluenceId: string;
-  createurEmail: string;
-  dateCreation: string;
-  modificateurEmail?: string;
-  dateModification?: string;
 }
 
 export const PartiesPrenantesTab = ({ projetId }: PartiesPrenantesTabProps) => {
@@ -49,14 +50,24 @@ export const PartiesPrenantesTab = ({ projetId }: PartiesPrenantesTabProps) => {
   const [typesPartiePrenante, setTypesPartiePrenante] = useState<any[]>([]);
   const [niveauxInfluence, setNiveauxInfluence] = useState<any[]>([]);
 
+  // Dialog pour éditer une partie prenante
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [selectedPartiePrenante, setSelectedPartiePrenante] = useState<ProjetPartiePrenante | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    membreEmail: "",
+    typePartiePrenanteId: "",
+    niveauInfluenceId: "",
+  });
+  const [editing, setEditing] = useState(false);
+
   // Charger les parties prenantes du projet
   const loadPartiesPrenantesProjet = async () => {
     if (!projetId) return;
     
     try {
       setLoading(true);
-      const response = await api.get(`/parties-prenantes/projet/${projetId}`);
-      setPartiesPrenantes(response.data);
+      const partiesData = await getPartiesPrenantesByProjet(projetId);
+      setPartiesPrenantes(partiesData);
     } catch (error: any) {
       console.log("Erreur lors du chargement des parties prenantes:", error.message);
       if (error.response?.status === 404 || error.response?.status === 401) {
@@ -105,13 +116,16 @@ export const PartiesPrenantesTab = ({ projetId }: PartiesPrenantesTabProps) => {
 
   // Assigner une partie prenante au projet
   const handleAssignerPartiePrenante = async () => {
-    if (!projetId || !selectedMembreEmail.trim() || !selectedType || !selectedNiveau) return;
+    if (!projetId || !selectedMembreEmail.trim() || !selectedType || !selectedNiveau) {
+      toast.error("Veuillez remplir tous les champs");
+      return;
+    }
     
     try {
       setAddingPartiePrenante(true);
       
-      const response = await api.post("/parties-prenantes/assigner", {
-        projetId: projetId,
+      await createPartiePrenante({
+        projetId,
         membreEmail: selectedMembreEmail.trim(),
         typePartiePrenanteId: selectedType,
         niveauInfluenceId: selectedNiveau
@@ -137,7 +151,7 @@ export const PartiesPrenantesTab = ({ projetId }: PartiesPrenantesTabProps) => {
   // Supprimer une partie prenante du projet
   const handleSupprimerPartiePrenante = async (partiePrenanteId: string) => {
     try {
-      await api.delete(`/parties-prenantes/${partiePrenanteId}`);
+      await deletePartiePrenante(partiePrenanteId);
       await loadPartiesPrenantesProjet();
       toast.success("Partie prenante supprimée avec succès");
     } catch (error: any) {
@@ -147,6 +161,54 @@ export const PartiesPrenantesTab = ({ projetId }: PartiesPrenantesTabProps) => {
       } else {
         toast.error("Erreur lors de la suppression de la partie prenante");
       }
+    }
+  };
+
+  // Ouvrir le dialogue pour éditer une partie prenante
+  const handleEditPartiePrenante = (partiePrenante: ProjetPartiePrenante) => {
+    setSelectedPartiePrenante(partiePrenante);
+    setEditFormData({
+      membreEmail: partiePrenante.membreEmail,
+      typePartiePrenanteId: partiePrenante.typePartiePrenanteId,
+      niveauInfluenceId: partiePrenante.niveauInfluenceId,
+    });
+    setOpenEditDialog(true);
+  };
+
+  // Confirmer l'édition d'une partie prenante
+  const handleConfirmerEdit = async () => {
+    if (!selectedPartiePrenante || !editFormData.membreEmail.trim() || !editFormData.typePartiePrenanteId || !editFormData.niveauInfluenceId) {
+      toast.error("Veuillez remplir tous les champs");
+      return;
+    }
+
+    try {
+      setEditing(true);
+      await updatePartiePrenante(selectedPartiePrenante.id, {
+        projetId,
+        membreEmail: editFormData.membreEmail.trim(),
+        typePartiePrenanteId: editFormData.typePartiePrenanteId,
+        niveauInfluenceId: editFormData.niveauInfluenceId,
+      });
+      
+      setOpenEditDialog(false);
+      setSelectedPartiePrenante(null);
+      setEditFormData({
+        membreEmail: "",
+        typePartiePrenanteId: "",
+        niveauInfluenceId: "",
+      });
+      await loadPartiesPrenantesProjet();
+      toast.success("Partie prenante modifiée avec succès");
+    } catch (error: any) {
+      console.log("Erreur lors de la modification:", error.message);
+      if (error.response?.status === 404 || error.response?.status === 401) {
+        toast.info("Fonctionnalité en cours de développement");
+      } else {
+        toast.error("Erreur lors de la modification de la partie prenante");
+      }
+    } finally {
+      setEditing(false);
     }
   };
 
@@ -168,9 +230,19 @@ export const PartiesPrenantesTab = ({ projetId }: PartiesPrenantesTabProps) => {
     });
   };
 
-  // Fonction pour obtenir les initiales
-  const getInitiales = (email: string): string => {
-    return email.substring(0, 2).toUpperCase();
+  // Fonction pour obtenir le nom du membre
+  const getMembreNom = (membreEmail: string) => {
+    const membre = tousMembres.find(m => m.email === membreEmail);
+    return membre?.nomPrenom ?? membreEmail;
+  };
+
+  // Fonction pour obtenir les initiales du membre
+  const getMembreInitiales = (membreEmail: string) => {
+    const membre = tousMembres.find(m => m.email === membreEmail);
+    if (membre?.nomPrenom) {
+      return membre.nomPrenom.substring(0, 2).toUpperCase();
+    }
+    return membreEmail.substring(0, 2).toUpperCase();
   };
 
   // Fonction pour obtenir la couleur du badge selon le niveau d'influence
@@ -187,13 +259,13 @@ export const PartiesPrenantesTab = ({ projetId }: PartiesPrenantesTabProps) => {
   // Fonction pour obtenir le nom du type de partie prenante
   const getTypePartiePrenanteNom = (typeId: string) => {
     const type = typesPartiePrenante.find(t => t.id === typeId);
-    return type ? type.description : 'Type inconnu';
+    return type?.libelle ?? 'Type inconnu';
   };
 
   // Fonction pour obtenir le nom du niveau d'influence
   const getNiveauInfluenceNom = (niveauId: string) => {
     const niveau = niveauxInfluence.find(n => n.id === niveauId);
-    return niveau ? niveau.description : 'Niveau inconnu';
+    return niveau?.description ?? 'Niveau inconnu';
   };
 
   return (
@@ -232,7 +304,7 @@ export const PartiesPrenantesTab = ({ projetId }: PartiesPrenantesTabProps) => {
               <SelectContent>
                 {typesPartiePrenante.map((type) => (
                   <SelectItem key={type.id} value={type.id}>
-                    {type.description}
+                    {type.libelle}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -294,23 +366,23 @@ export const PartiesPrenantesTab = ({ projetId }: PartiesPrenantesTabProps) => {
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
                       <span className="text-sm font-medium text-green-700">
-                        {getInitiales(partiePrenante.membreEmail)}
+                        {getMembreInitiales(partiePrenante.membreEmail)}
                       </span>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium">
-                          {partiePrenante.membreEmail}
+                          {getMembreNom(partiePrenante.membreEmail)}
                         </span>
-                        <Badge variant="outline" className="text-xs">
-                          {getTypePartiePrenanteNom(partiePrenante.typePartiePrenanteId)}
+                        <Badge variant="outline" className="text-xs bg-blue-100 text-blue-700">
+                          {partiePrenante.typePartiePrenante?.libelle ?? getTypePartiePrenanteNom(partiePrenante.typePartiePrenanteId)}
                         </Badge>
                         <Badge 
                           variant="secondary" 
                           className={`text-xs ${getNiveauInfluenceColor(getNiveauInfluenceNom(partiePrenante.niveauInfluenceId))}`}
                         >
                           <Star className="h-3 w-3 mr-1" />
-                          {getNiveauInfluenceNom(partiePrenante.niveauInfluenceId)}
+                          {partiePrenante.niveauInfluence?.description ?? getNiveauInfluenceNom(partiePrenante.niveauInfluenceId)}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -319,20 +391,114 @@ export const PartiesPrenantesTab = ({ projetId }: PartiesPrenantesTabProps) => {
                       </div>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSupprimerPartiePrenante(partiePrenante.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEditPartiePrenante(partiePrenante)}
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSupprimerPartiePrenante(partiePrenante.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog pour éditer une partie prenante */}
+      <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier la partie prenante</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Membre</label>
+              <Select
+              disabled={true}
+                value={editFormData.membreEmail}
+                onValueChange={(value) => setEditFormData({ ...editFormData, membreEmail: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un membre..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {tousMembres.map((membre) => (
+                    <SelectItem key={membre.id} value={membre.email}>
+                      <span>{membre.nomPrenom}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Type de partie prenante</label>
+              <Select
+                value={editFormData.typePartiePrenanteId}
+                onValueChange={(value) => setEditFormData({ ...editFormData, typePartiePrenanteId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Type de partie prenante..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {typesPartiePrenante.map((type) => (
+                    <SelectItem key={type.id} value={type.id}>
+                      {type.libelle}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Niveau d'influence</label>
+              <Select
+                value={editFormData.niveauInfluenceId}
+                onValueChange={(value) => setEditFormData({ ...editFormData, niveauInfluenceId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Niveau d'influence..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {niveauxInfluence.map((niveau) => (
+                    <SelectItem key={niveau.id} value={niveau.id}>
+                      <div className="flex items-center gap-2">
+                        <Star className="h-3 w-3" />
+                        {niveau.description}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setOpenEditDialog(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleConfirmerEdit}
+              disabled={!editFormData.membreEmail.trim() || !editFormData.typePartiePrenanteId || !editFormData.niveauInfluenceId || editing}
+              className="bg-inwi-purple/80 hover:bg-inwi-purple"
+            >
+              {editing ? "Modification..." : "Confirmer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }; 

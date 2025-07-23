@@ -2,20 +2,17 @@ import api from './api';
 
 export interface EtapeProjet {
   id: string;
-  projetId: string;
   titre: string;
   description: string;
-  progressionPct: number;
-  ordre: number;
-  priorite: 'HAUTE' | 'MOYEN' | 'BAS';
-  dateDebut: string;
-  dateFin: string;
-  statutId: string;
-  typeEtapeId: string;
-  createurEmail?: string;
-  dateCreation?: string;
-  modificateurEmail?: string;
-  dateModification?: string;
+  ordre_execution: number;
+  progressionPct: number | null;
+  priorite: string | null;
+  dateDebut: string | null;
+  dateFin: string | null;
+  statutEtapeId: string | null;
+  typeEtapeId: string | null;
+  issueTemplateYn: boolean;
+  projetId?: string;
 }
 
 export interface EtapeProjetInput {
@@ -23,8 +20,8 @@ export interface EtapeProjetInput {
   titre: string;
   description: string;
   progressionPct: number;
-  ordre: number;
-  priorite: 'HAUTE' | 'MOYEN' | 'BAS';
+  ordre_execution: number;
+  priorite: string;
   dateDebut: string;
   dateFin: string;
   statutId: string;
@@ -35,8 +32,8 @@ export interface EtapeProjetUpdate {
   titre?: string;
   description?: string;
   progressionPct?: number;
-  ordre?: number;
-  priorite?: 'HAUTE' | 'MOYEN' | 'BAS';
+  ordre_execution?: number;
+  priorite?: string;
   dateDebut?: string;
   dateFin?: string;
   statutId?: string;
@@ -46,41 +43,40 @@ export interface EtapeProjetUpdate {
 // Récupérer toutes les étapes d'un projet
 export const getEtapesProjet = async (projetId: string): Promise<EtapeProjet[]> => {
   try {
-    const response = await api.get('/etape-projets');
-    // Filtrer les étapes pour le projet spécifique
-    return response.data.filter((etape: EtapeProjet) => etape.projetId === projetId);
+    const response = await api.get(`/projets/${projetId}/etapes`);
+    return response.data;
   } catch (error) {
     console.error('Erreur lors du chargement des étapes du projet:', error);
     throw error;
   }
 };
 
-// Récupérer toutes les étapes
-export const getAllEtapesProjet = async (): Promise<EtapeProjet[]> => {
-  try {
-    const response = await api.get('/etape-projets');
-    return response.data;
-  } catch (error) {
-    console.error('Erreur lors du chargement des étapes:', error);
-    throw error;
-  }
-};
+// Récupérer toutes les étapes (non utilisé dans la nouvelle API, mais conservé si besoin)
+// export const getAllEtapesProjet = async (): Promise<EtapeProjet[]> => {
+//   try {
+//     const response = await api.get('/etapes-projet');
+//     return response.data;
+//   } catch (error) {
+//     console.error('Erreur lors du chargement des étapes:', error);
+//     throw error;
+//   }
+// };
 
 // Récupérer une étape par ID
-export const getEtapeProjetById = async (id: string): Promise<EtapeProjet> => {
-  try {
-    const response = await api.get(`/etape-projets/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error('Erreur lors du chargement de l\'étape:', error);
-    throw error;
-  }
-};
+// export const getEtapeProjetById = async (id: string): Promise<EtapeProjet> => {
+//   try {
+//     const response = await api.get(`/etapes-projet/${id}`);
+//     return response.data;
+//   } catch (error) {
+//     console.error('Erreur lors du chargement de l\'étape:', error);
+//     throw error;
+//   }
+// };
 
 // Créer une nouvelle étape
 export const createEtapeProjet = async (data: EtapeProjetInput): Promise<EtapeProjet> => {
   try {
-    const response = await api.post('/etape-projets', data);
+    const response = await api.post('/etapes-projet', data);
     return response.data;
   } catch (error) {
     console.error('Erreur lors de la création de l\'étape:', error);
@@ -91,7 +87,8 @@ export const createEtapeProjet = async (data: EtapeProjetInput): Promise<EtapePr
 // Mettre à jour une étape
 export const updateEtapeProjet = async (id: string, data: EtapeProjetUpdate): Promise<EtapeProjet> => {
   try {
-    const response = await api.put(`/etape-projets/${id}`, data);
+    console.log("data ----", data);
+    const response = await api.put(`/etapes-projet/${id}`, data);
     return response.data;
   } catch (error) {
     console.error('Erreur lors de la mise à jour de l\'étape:', error);
@@ -102,29 +99,29 @@ export const updateEtapeProjet = async (id: string, data: EtapeProjetUpdate): Pr
 // Supprimer une étape
 export const deleteEtapeProjet = async (id: string): Promise<void> => {
   try {
-    await api.delete(`/etape-projets/${id}`);
+    await api.delete(`/etapes-projet/${id}`);
   } catch (error) {
     console.error('Erreur lors de la suppression de l\'étape:', error);
     throw error;
   }
 };
 
-// Mettre à jour l'ordre des étapes
-export const updateEtapesOrder = async (etapes: { id: string; ordre: number }[]): Promise<void> => {
-  try {
-    await api.put('/etape-projets/ordre', { etapes });
-  } catch (error) {
-    console.error('Erreur lors de la mise à jour de l\'ordre des étapes:', error);
-    throw error;
-  }
-};
+// Mettre à jour l'ordre des étapes (à adapter si l'API change)
+// export const updateEtapesOrder = async (etapes: { id: string; ordre_execution: number }[]): Promise<void> => {
+//   try {
+//     await api.put('/etapes-projet/ordre', { etapes });
+//   } catch (error) {
+//     console.error('Erreur lors de la mise à jour de l\'ordre des étapes:', error);
+//     throw error;
+//   }
+// };
 
 export default {
   getEtapesProjet,
-  getAllEtapesProjet,
-  getEtapeProjetById,
+  // getAllEtapesProjet,
+  // getEtapeProjetById,
   createEtapeProjet,
   updateEtapeProjet,
   deleteEtapeProjet,
-  updateEtapesOrder,
+  // updateEtapesOrder,
 }; 

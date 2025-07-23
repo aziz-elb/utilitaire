@@ -58,6 +58,7 @@ import {
   UserCheck,
   ShieldCheck,
   ShieldMinus,
+  UserPlus,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -66,20 +67,23 @@ import {
   addMembre,
   updateMembrePartial,
   deleteMembre,
+  assignMembreToRole,
   type Membre as ServiceMembre,
   type MembreInput,
 } from "@/services/membreService";
-import { getRoles, type Role as ServiceRole } from "@/services/roleService";
+import type { Entite } from '@/services/entiteService';
+import type { Fonction } from '@/services/fonctionService';
+import type { TypeMembre } from '@/services/typeMembreService';
+import type { Role } from '@/services/roleService';
 
 // Use the Membre type from the service
 type Membre = ServiceMembre;
-type Role = ServiceRole;
 
 interface MembreCrudProps {
   membres: Membre[];
-  fonctions: any[];
-  entites: any[];
-  typesMembre: any[];
+  fonctions: Fonction[];
+  entites: Entite[];
+  typesMembre: TypeMembre[];
   roles: Role[];
   loading: boolean;
   onMembreUpdated: (membres: Membre[]) => void;
@@ -101,6 +105,7 @@ export default function MembreCrud({
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [openAssignRoleDialog, setOpenAssignRoleDialog] = useState(false);
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [currentMembre, setCurrentMembre] = useState<Membre | null>(null);
 
@@ -135,34 +140,18 @@ export default function MembreCrud({
     });
   };
 
-  const getEntityName = (id: string) => {
-    const entity = entites.find((e) => e.entiteId === id);
-    return entity ? entity.titre : "Inconnu";
+  // Update getEntityName, getFonctionName, getTypeMembreName, getRoleName to use new interfaces
+  const getEntityName = (entiteId:string) => {
+    return entites.find(e => e.id === entiteId)?.titre || 'Inconnu';
   };
-
-  const getFonctionName = (id: string) => {
-    const fonction = fonctions.find((f) => f.fonctionId === id);
-    return fonction ? fonction.libelle : "Inconnu";
+  const getFonctionName = (fonctionId:string) => {
+    return fonctions.find(f => f.id === fonctionId)?.libelle || 'Inconnu';
   };
-
-  const getTypeMembreName = (id: string) => {
-    const type = typesMembre.find((t) => t.typeMembreId === id);
-    return type ? type.libelle : "Inconnu";
+  const getTypeMembreName = (typeMembreId:string) => {
+    return typesMembre.find(t => t.id === typeMembreId)?.libelle || 'Inconnu';
   };
-
-  const getStatusColor = (isActive: boolean) => {
-    return isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
-  };
-
-  const getTypeColor = (isInternal: boolean) => {
-    return isInternal
-      ? "bg-blue-100 text-blue-800"
-      : "bg-purple-100 text-purple-800";
-  };
-
-  const getRoleName = (id: string) => {
-    const role = roles.find((r) => r.id === id);
-    return role ? role.name : "Inconnu";
+  const getRoleName = (roleName:string) => {
+    return roles.find(r => r.name === roleName)?.name || 'Inconnu';
   };
 
   // Add a utility for badge color harmony
@@ -195,6 +184,14 @@ export default function MembreCrud({
     let hash = 0;
     for (let i = 0; i < typeId.length; i++) hash += typeId.charCodeAt(i);
     return colors[hash % colors.length];
+  };
+
+  const getStatusColor = (isActive: boolean) => {
+    return isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
+  };
+
+  const getTypeColor = (isInternal: boolean) => {
+    return isInternal ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800";
   };
 
   // Gestion des formulaires
@@ -316,6 +313,22 @@ export default function MembreCrud({
     }
   };
 
+  const handleAssignRoleClick = (membre: Membre) => {
+    setCurrentMembre(membre);
+    setOpenAssignRoleDialog(true);
+  };
+  const handleAssignRole = async () => {
+    if (!currentMembre) return;
+    try {
+      await assignMembreToRole(currentMembre.keycloakUserId, formData.role);
+      setOpenAssignRoleDialog(false);
+      toast.success("Rôle assigné avec succès");
+    } catch (error) {
+      toast.error("Erreur lors de l'assignation du rôle");
+      console.error(error);
+    }
+  };
+
   return (
     <div className="container mx-auto py-8">
       <Toaster position="bottom-right" richColors />
@@ -352,6 +365,7 @@ export default function MembreCrud({
                   <TableHead>Fonction</TableHead>
                   <TableHead>Entité</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead>Rôle</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -402,6 +416,11 @@ export default function MembreCrud({
                           {membre.actifYn ? "Actif" : "Inactif"}
                         </Badge>
                       </TableCell>
+                      <TableCell>
+                        <Badge className="text-orange-600 bg-orange-600/10">
+                          {membre.role}
+                        </Badge>
+                      </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -417,6 +436,13 @@ export default function MembreCrud({
                             <DropdownMenuItem onClick={() => handleEditClick(membre)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleAssignRoleClick(membre)}
+                              
+                            >
+                              <UserPlus className="h-4 w-4 mr-2" />
+                              Assigné un rôle
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleToggleStatus(membre)}
@@ -436,6 +462,7 @@ export default function MembreCrud({
                                 </>
                               )}
                             </DropdownMenuItem>
+                            
                             <DropdownMenuItem
                               onClick={() => handleDeleteClick(membre)}
                               className="text-red-600"
@@ -524,6 +551,9 @@ export default function MembreCrud({
                     <Badge className={getTypeColor(membre.interneYn)}>
                       {membre.interneYn ? "Interne" : "Externe"}
                       </Badge>
+                      <Badge className="text-orange-600 bg-orange-600/10">
+                          {membre.role}
+                        </Badge>
                     </div>
                   </CardHeader>
 
@@ -575,156 +605,143 @@ export default function MembreCrud({
               Remplissez les champs pour ajouter un nouveau membre.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="nomPrenom" className="text-right">
-                Nom Prénom
-              </Label>
-                <Input
+          <div className="flex flex-col gap-4 py-4">
+            <div>
+              <Label htmlFor="nomPrenom" className="mb-1 block">Nom Prenom</Label>
+              <Input
                 id="nomPrenom"
                 value={formData.nomPrenom}
                 onChange={(e) => setFormData({ ...formData, nomPrenom: e.target.value })}
-                className="col-span-3"
-                placeholder="Ex : Nom Prenom"
-                />
-              </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
+                placeholder="Nom Prenom"
+              />
+            </div>
+            <div>
+              <Label htmlFor="photoProfile" className="mb-1 block">Profile Picture</Label>
+              <Input
+                id="photoProfile"
+                value={formData.photoProfile || ''}
+                onChange={(e) => setFormData({ ...formData, photoProfile: e.target.value })}
+                placeholder="https://"
+              />
+            </div>
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-6">
+                <Label htmlFor="email" className="mb-1 block">Email *</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="col-span-3"
-                placeholder="Ex: example@gmail.com"
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="example@gmail.com"
                 />
               </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="telephone" className="text-right">
-                Téléphone
-              </Label>
+              <div className="col-span-6">
+                <Label htmlFor="password" className="mb-1 block">Password *</Label>
                 <Input
-                  id="telephone"
-                  value={formData.telephone}
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="*********"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="telephone" className="mb-1 block">Phone</Label>
+              <Input
+                id="telephone"
+                value={formData.telephone}
                 onChange={(e) => setFormData({ ...formData, telephone: e.target.value })}
-                className="col-span-3"
-                placeholder="Ex: 0641946723"
-                />
-              </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="password" className="text-right">
-                Mot de passe
-              </Label>
-                <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="col-span-3"
-                placeholder="Ex : Inwi_321"
-                />
-              </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="text-right">
-                Rôle
-              </Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value) => setFormData({ ...formData, role: value })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner un rôle" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role.id} value={role.name}>
-                      {role.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="typeMembreId" className="text-right">
-                Type de membre
-              </Label>
+                placeholder="06*********"
+              />
+            </div>
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-6">
+                <Label htmlFor="typeMembreId" className="mb-1 block">Type Membre</Label>
                 <Select
-                value={formData.typeMembreId}
-                onValueChange={(value) => setFormData({ ...formData, typeMembreId: value })}
-              >
-                <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Sélectionner un type" />
+                  value={formData.typeMembreId}
+                  onValueChange={(value) => setFormData({ ...formData, typeMembreId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Type Membre" />
                   </SelectTrigger>
                   <SelectContent>
                     {typesMembre.map((type) => (
-                    <SelectItem key={type.typeMembreId} value={type.typeMembreId}>
+                      <SelectItem key={type.id} value={type.id}>
                         {type.libelle}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="entiteId" className="text-right">
-                Entité
-              </Label>
+              <div className="col-span-6">
+                <Label htmlFor="entiteId" className="mb-1 block">Entite</Label>
                 <Select
-                value={formData.entiteId}
-                onValueChange={(value) => setFormData({ ...formData, entiteId: value })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner une entité" />
+                  value={formData.entiteId}
+                  onValueChange={(value) => setFormData({ ...formData, entiteId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Entite" />
                   </SelectTrigger>
                   <SelectContent>
-                  {entites.map((entite) => (
-                    <SelectItem key={entite.entiteId} value={entite.entiteId}>
-                      {entite.titre}
+                    {entites.map((entite) => (
+                      <SelectItem key={entite.id} value={entite.id}>
+                        {entite.titre}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="fonctionId" className="text-right">
-                Fonction
-              </Label>
+            </div>
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-6">
+                <Label htmlFor="fonctionId" className="mb-1 block">Fonction</Label>
                 <Select
-                value={formData.fonctionId}
-                onValueChange={(value) => setFormData({ ...formData, fonctionId: value })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Sélectionner une fonction" />
+                  value={formData.fonctionId}
+                  onValueChange={(value) => setFormData({ ...formData, fonctionId: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Fonction" />
                   </SelectTrigger>
                   <SelectContent>
-                  {fonctions.map((fonction) => (
-                    <SelectItem key={fonction.fonctionId} value={fonction.fonctionId}>
-                      {fonction.libelle}
+                    {fonctions.map((fonction) => (
+                      <SelectItem key={fonction.id} value={fonction.id}>
+                        {fonction.libelle}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="interneYn" className="text-right">
-                Interne
-              </Label>
-              <div className="col-span-3">
+              <div className="col-span-6">
+                <Label htmlFor="role" className="mb-1 block">Role</Label>
+                <Select
+                  value={formData.role}
+                  onValueChange={(value) => setFormData({ ...formData, role: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.name}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-12 gap-4">
+              <div className="col-span-6 flex items-center justify-between border p-4 rounded-lg">
+                <span>Interne</span>
                 <Switch
-                  id="interneYn"
                   checked={formData.interneYn}
                   onCheckedChange={(checked) => setFormData({ ...formData, interneYn: checked })}
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="actifYn" className="text-right">
-                Actif
-              </Label>
-              <div className="col-span-3">
+              <div className="col-span-6 flex items-center justify-between border p-4 rounded-lg">
+                <span>Actif</span>
                 <Switch
-                  id="actifYn"
                   checked={formData.actifYn}
                   onCheckedChange={(checked) => setFormData({ ...formData, actifYn: checked })}
                 />
@@ -732,11 +749,9 @@ export default function MembreCrud({
             </div>
           </div>
           <DialogFooter>
+            <Button type="submit" onClick={handleAddMembre}>Submit</Button>
             <Button variant="outline" onClick={() => setOpenAddDialog(false)}>
               Annuler
-            </Button>
-            <Button type="submit" onClick={handleAddMembre} className="inwi_btn">
-              Ajouter
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -753,13 +768,20 @@ export default function MembreCrud({
           </DialogHeader>
             <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
+            <Avatar className="h-20 w-20">
+                <AvatarImage src={currentMembre?.profilePictureUrl} />
+                <AvatarFallback>
+                  {getInitials(currentMembre?.nomPrenom || 'Inconnu')}
+                </AvatarFallback>
+                  </Avatar>
+              {/* <Label className="text-right">Nom Prénom</Label> */}
+              <div className="col-span-3">{currentMembre?.nomPrenom}</div>
+              </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">ID</Label>
               <div className="col-span-3">{currentMembre?.id}</div>
                 </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Nom Prénom</Label>
-              <div className="col-span-3">{currentMembre?.nomPrenom}</div>
-              </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Email</Label>
               <div className="col-span-3">{currentMembre?.email}</div>
@@ -773,7 +795,7 @@ export default function MembreCrud({
               <div className="col-span-3">{currentMembre ? getRoleName(currentMembre.role) : ""}</div>
                 </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Type de membre</Label>
+              <Label className="">Type de membre</Label>
               <div className="col-span-3">{currentMembre ? getTypeMembreName(currentMembre.typeMembreId) : ""}</div>
                 </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -858,7 +880,7 @@ export default function MembreCrud({
                       </SelectTrigger>
                       <SelectContent>
                         {typesMembre.map((type) => (
-                    <SelectItem key={type.typeMembreId} value={type.typeMembreId}>
+                    <SelectItem key={type.id} value={type.id}>
                             {type.libelle}
                           </SelectItem>
                         ))}
@@ -878,7 +900,7 @@ export default function MembreCrud({
                       </SelectTrigger>
                       <SelectContent>
                   {entites.map((entite) => (
-                    <SelectItem key={entite.entiteId} value={entite.entiteId}>
+                    <SelectItem key={entite.id} value={entite.id}>
                       {entite.titre}
                           </SelectItem>
                         ))}
@@ -898,7 +920,7 @@ export default function MembreCrud({
                       </SelectTrigger>
                       <SelectContent>
                   {fonctions.map((fonction) => (
-                    <SelectItem key={fonction.fonctionId} value={fonction.fonctionId}>
+                    <SelectItem key={fonction.id} value={fonction.id}>
                       {fonction.libelle}
                           </SelectItem>
                         ))}
@@ -949,6 +971,18 @@ export default function MembreCrud({
                 </SelectContent>
               </Select>
                 </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-photoProfile" className="text-right">
+                  URL Photo de profil
+                </Label>
+                <Input
+                  id="edit-photoProfile"
+                  value={formData.photoProfile || ''}
+                  onChange={(e) => setFormData({ ...formData, photoProfile: e.target.value })}
+                  className="col-span-3"
+                  placeholder="https://..."
+                />
+              </div>
               </div>
               <DialogFooter>
             <Button variant="outline" onClick={() => setOpenEditDialog(false)}>
@@ -982,6 +1016,47 @@ export default function MembreCrud({
             </Button>
             <Button variant="destructive" onClick={handleDeleteMembre} className="inwi_btn">
               Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+
+       {/* Modale d'assignation de rôle */}
+       <Dialog open={openAssignRoleDialog} onOpenChange={setOpenAssignRoleDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assigner un rôle</DialogTitle>
+            <DialogDescription>
+              Assignez un rôle au membre{" "}
+              <span className="font-semibold">{currentMembre?.nomPrenom}</span> ?
+            </DialogDescription>
+          </DialogHeader>
+          
+            <div>
+              <Label htmlFor="assign-role" className="text-right my-3">Rôle</Label>
+              <Select
+                value={formData.role}
+                onValueChange={(value) => setFormData({ ...formData, role: value })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Sélectionner un rôle" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+   
+          <DialogFooter>
+          
+            <Button variant="destructive" onClick={handleAssignRole} className="inwi_btn">
+              Assigné
             </Button>
           </DialogFooter>
         </DialogContent>

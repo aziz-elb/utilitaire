@@ -7,12 +7,13 @@ import FonctionCrud from "./FonctionCrud";
 import EntiteCrud from "./EntiteCrud";
 import TypeMembreCrud from "./TypeMembreCrud";
 import RoleCrud from "./RoleCrud";
+import ResourceCrud from "./ResourceCrud";
 
 const MembreConfig = () => {
   return (
     <Tabs defaultValue="membres" className="w-full">
       {/* En-tête des onglets */}
-      <TabsList className="grid w-full grid-cols-5">
+      <TabsList className="grid w-full grid-cols-6">
         <TabsTrigger value="fonctions">
           <Briefcase className="h-4 w-4 mr-2" /> Fonctions
         </TabsTrigger>
@@ -24,6 +25,9 @@ const MembreConfig = () => {
         </TabsTrigger>
         <TabsTrigger value="roles">
           <Key className="h-4 w-4 mr-2" /> Rôles
+        </TabsTrigger>
+        <TabsTrigger value="resources">
+          <User className="h-4 w-4 mr-2" /> Resources
         </TabsTrigger>
         <TabsTrigger value="" className="flex justify-center items-center">
           <EyeOff className="h-4 w-4 mr-2" />
@@ -46,6 +50,10 @@ const MembreConfig = () => {
 
         <TabsContent value="roles">
           <RoleCrud />
+        </TabsContent>
+
+        <TabsContent value="resources">
+          <ResourceCrud />
         </TabsContent>
       </div>
     </Tabs>

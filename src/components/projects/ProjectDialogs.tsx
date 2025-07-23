@@ -20,7 +20,13 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { addProject, type ProjectInput } from "@/services/projectService";
-import { getTemplates, getEtapeModeles } from "@/services/templateService";
+import { deleteProject } from "@/services/projectService";
+import { getTemplates } from "@/services/templateService";
+import type { TemplateProjet } from "@/services/templateService";
+import { getTypeProjets } from "@/services/typeProjetService";
+import type { TypeProjet } from "@/services/typeProjetService";
+import { getStatutProjets } from "@/services/statutProjetService";
+import type { StatutProjet } from "@/services/statutProjetService";
 import { getNiveauInfluences } from "@/services/niveauInfluenceService";
 import { Switch } from "@/components/ui/switch";
 import { Calendar } from "@/components/ui/calendar";
@@ -28,6 +34,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import axios from "axios";
+import { Slider } from "@/components/ui/slider";
+import { Rating, RatingButton } from '@/components/ui/shadcn-io/rating';
+import { Form } from "../ui/form";
 
 type ProjectDialogProps = {
   openAddDialog: boolean;
@@ -48,38 +58,49 @@ export const ProjectDialogs = ({
   setCurrentProject,
   refreshProjects
 }: ProjectDialogProps) => {
-  const [formData, setFormData] = useState<ProjectInput>({
+  const initialFormData: ProjectInput = {
     titre: "",
+    code: "",
     description: "",
-    modeleProjetId: "",
-    etapeModeleId: "",
+    typeProjetId: "",
+    templateProjetId: "",
+    statutProjetId: "",
     dateDebut: "",
     dateFin: "",
     dateCible: "",
     progressionPct: 0,
-    niveauComplexite: "MOYEN",
-    documentationDeposeeYn: false,
+    niveauComplexite: 1,
     passationTermineeYn: false,
-  });
+    visibiliteYn: false,
+    documentationDeposeeYn: false,
+  };
+  const [formData, setFormData] = useState<ProjectInput>(initialFormData);
 
-  const [templates, setTemplates] = useState<any[]>([]);
-  const [etapeModeles, setEtapeModeles] = useState<any[]>([]);
-  const [allEtapeModeles, setAllEtapeModeles] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<TemplateProjet[]>([]);
+  const [typeProjets, setTypeProjets] = useState<TypeProjet[]>([]);
+  const [statutProjets, setStatutProjets] = useState<StatutProjet[]>([]);
   const [niveauInfluences, setNiveauInfluences] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Charger les données des modèles, étapes et niveaux d'influence
+  // États pour les dates
+  const [dateDebut, setDateDebut] = useState<Date | undefined>(undefined);
+  const [dateFin, setDateFin] = useState<Date | undefined>(undefined);
+  const [dateCible, setDateCible] = useState<Date | undefined>(undefined);
+
+  // Charger les données dynamiques
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [templatesData, etapesData, niveauData] = await Promise.all([
+        const [templatesData, typeProjetsData, statutProjetsData, niveauData] = await Promise.all([
           getTemplates(),
-          getEtapeModeles(),
+          getTypeProjets(),
+          getStatutProjets(),
           getNiveauInfluences()
         ]);
         setTemplates(templatesData);
-        setAllEtapeModeles(etapesData);
+        setTypeProjets(typeProjetsData);
+        setStatutProjets(statutProjetsData);
         setNiveauInfluences(niveauData);
       } catch (error) {
         console.error("Erreur lors du chargement des données:", error);
@@ -94,42 +115,10 @@ export const ProjectDialogs = ({
     }
   }, [openAddDialog]);
 
-  // Filtrer les étapes selon le modèle sélectionné
-  useEffect(() => {
-    if (formData.modeleProjetId && allEtapeModeles.length > 0) {
-      const filteredEtapes = allEtapeModeles.filter(
-        etape => etape.modeleProjetId === formData.modeleProjetId
-      );
-      setEtapeModeles(filteredEtapes);
-      // Réinitialiser l'étape sélectionnée si elle n'appartient pas au nouveau modèle
-      if (!filteredEtapes.find(etape => etape.id === formData.etapeModeleId)) {
-        setFormData(prev => ({ ...prev, etapeModeleId: "" }));
-      }
-    } else {
-      setEtapeModeles([]);
-    }
-  }, [formData.modeleProjetId, allEtapeModeles]);
-
   const handleAddProject = async () => {
-    console.log('=== PROJECT DIALOGS - AVANT ENVOI ===');
-    console.log('formData complet:', formData);
-    console.log('Validation des données:');
-    console.log('  titre:', formData.titre, '(requis:', !!formData.titre, ')');
-    console.log('  description:', formData.description);
-    console.log('  modeleProjetId:', formData.modeleProjetId, '(requis:', !!formData.modeleProjetId, ')');
-    console.log('  etapeModeleId:', formData.etapeModeleId, '(requis:', !!formData.etapeModeleId, ')');
-    console.log('  dateDebut:', formData.dateDebut);
-    console.log('  dateFin:', formData.dateFin);
-    console.log('  dateCible:', formData.dateCible);
-    console.log('  progressionPct:', formData.progressionPct, '(type:', typeof formData.progressionPct, ')');
-    console.log('  niveauComplexite:', formData.niveauComplexite);
-    console.log('  documentationDeposeeYn:', formData.documentationDeposeeYn, '(type:', typeof formData.documentationDeposeeYn, ')');
-    console.log('  passationTermineeYn:', formData.passationTermineeYn, '(type:', typeof formData.passationTermineeYn, ')');
     
     try {
-      console.log('Appel du service addProject...');
       await addProject(formData);
-      console.log('Projet créé avec succès');
       toast.success("Projet créé avec succès");
       setOpenAddDialog(false);
       await refreshProjects();
@@ -145,7 +134,7 @@ export const ProjectDialogs = ({
     if (!currentProject) return;
     
     try {
-      await axios.delete(`http://localhost:8000/projet/${currentProject.id}`);
+      await deleteProject(currentProject.id);
       toast.success("Projet supprimé avec succès");
       setOpenDeleteDialog(false);
       await refreshProjects();
@@ -155,6 +144,30 @@ export const ProjectDialogs = ({
     }
   };
 
+  // Fonctions pour gérer les changements de dates
+  const handleDateDebutChange = (date: Date | undefined) => {
+    setDateDebut(date);
+    setFormData({ 
+      ...formData, 
+      dateDebut: date ? format(date, 'yyyy-MM-dd') : "" 
+    });
+  };
+
+  const handleDateFinChange = (date: Date | undefined) => {
+    setDateFin(date);
+    setFormData({ 
+      ...formData, 
+      dateFin: date ? format(date, 'yyyy-MM-dd') : "" 
+    });
+  };
+
+  const handleDateCibleChange = (date: Date | undefined) => {
+    setDateCible(date);
+    setFormData({ 
+      ...formData, 
+      dateCible: date ? format(date, 'yyyy-MM-dd') : "" 
+    });
+  };
 
   return (
     <>
@@ -162,95 +175,111 @@ export const ProjectDialogs = ({
       <Dialog open={openAddDialog} onOpenChange={setOpenAddDialog}>
         <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Nouveau Projet</DialogTitle>
-            <DialogDescription>
-              Remplissez les détails du nouveau projet
-            </DialogDescription>
+            <DialogTitle className="text-center">Nouveau Projet</DialogTitle>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
-            {/* Titre et Description */}
-              <div className="space-y-2">
-              <Label htmlFor="titre">Titre du projet *</Label>
-                <Input
-                  id="titre"
-                  value={formData.titre}
-                  onChange={(e) =>
-                    setFormData({ ...formData, titre: e.target.value })
-                  }
-                placeholder="Nom du projet"
+          <form 
+            className="space-y-6 max-w-3xl py-5 grid grid-cols-4 gap-4"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                await handleAddProject();
+                setFormData(initialFormData);
+                setDateDebut(undefined);
+                setDateFin(undefined);
+                setDateCible(undefined);
+              } catch (error) {
+                // error handled in handleAddProject
+              }
+            }}
+          >
+            <div className="space-y-2 col-span-3">
+              <Label htmlFor="titre">Titre *</Label>
+              <Input
+                id="titre"
+                value={formData.titre}
+                onChange={(e) => setFormData({ ...formData, titre: e.target.value })}
+                placeholder="Titre"
                 required
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Description détaillée du projet"
-                rows={3}
+            <div className="space-y-2 col-span-1">
+              <Label htmlFor="code">Code *</Label>
+              <Input
+                id="code"
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                placeholder="PORTAIL-11111"
+                required
               />
             </div>
+            <div className="col-span-4 grid grid-cols-6 space-x-1">
 
-            {/* Modèle et Étape Modèle */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="modeleProjetId">Modèle de projet</Label>
-                <Select
-                  value={formData.modeleProjetId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, modeleProjetId: value })
-                  }
-                  disabled={loading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={loading ? "Chargement..." : "Sélectionner un modèle"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {templates.map((template) => (
-                      <SelectItem key={template.id} value={template.id}>
-                        {template.description}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="etapeModeleId">Étape du modèle</Label>
-                <Select
-                  value={formData.etapeModeleId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, etapeModeleId: value })
-                  }
-                  disabled={loading || !formData.modeleProjetId}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={
-                      !formData.modeleProjetId 
-                        ? "Sélectionnez d'abord un modèle" 
-                        : loading 
-                          ? "Chargement..." 
-                          : "Sélectionner une étape"
-                    } />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {etapeModeles.map((etape) => (
-                      <SelectItem key={etape.id} value={etape.id}>
-                        {etape.description}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2 col-span-2">
+                          <Label htmlFor="typeProjetId">Type Projet *</Label>
+                          <Select
+                            value={formData.typeProjetId}
+                            onValueChange={(value) => setFormData({ ...formData, typeProjetId: value })}
+                            disabled={loading}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder={loading ? "Chargement..." : "Sélectionner un type de projet"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {typeProjets.map((type) => (
+                                <SelectItem key={type.id} value={type.id}>
+                                  {type.libelle}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2 col-span-2">
+                          <Label htmlFor="statutProjetId">Statut Projet *</Label>
+                          <Select
+                            value={formData.statutProjetId}
+                            onValueChange={(value) => setFormData({ ...formData, statutProjetId: value })}
+                            disabled={loading}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder={loading ? "Chargement..." : "Sélectionner un statut"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {statutProjets.map((statut) => (
+                                <SelectItem key={statut.id} value={statut.id}>
+                                  {statut.libelle}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2 col-span-2">
+                          <Label htmlFor="templateProjetId">Template *</Label>
+                          <Select
+                            value={formData.templateProjetId}
+                            onValueChange={(value) => setFormData({ ...formData, templateProjetId: value })}
+                            disabled={loading}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder={loading ? "Chargement..." : "Sélectionner un template"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {templates.map((template) => (
+                                <SelectItem key={template.id} value={template.id}>
+                                  {template.libelle}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
             </div>
 
-            {/* Dates */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
+            {/* Champs de date avec Calendar */}
+            <div className="col-span-4 grid grid-cols-6 space-x-1">
+              <div className="space-y-2 col-span-2">
                 <Label>Date de début</Label>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -259,22 +288,21 @@ export const ProjectDialogs = ({
                       className="w-full justify-start text-left font-normal"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.dateDebut ? format(new Date(formData.dateDebut), "PPP", { locale: fr }) : "Sélectionner une date"}
+                      {dateDebut ? format(dateDebut, "PPP", { locale: fr }) : "Sélectionner une date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
-                      selected={formData.dateDebut ? new Date(formData.dateDebut) : undefined}
-                      onSelect={(date) =>
-                        setFormData({ ...formData, dateDebut: date ? format(date, "yyyy-MM-dd") : "" })
-                      }
+                      selected={dateDebut}
+                      onSelect={handleDateDebutChange}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
               </div>
-              <div className="space-y-2">
+
+              <div className="space-y-2 col-span-2">
                 <Label>Date de fin</Label>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -283,22 +311,21 @@ export const ProjectDialogs = ({
                       className="w-full justify-start text-left font-normal"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.dateFin ? format(new Date(formData.dateFin), "PPP", { locale: fr }) : "Sélectionner une date"}
+                      {dateFin ? format(dateFin, "PPP", { locale: fr }) : "Sélectionner une date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
-                      selected={formData.dateFin ? new Date(formData.dateFin) : undefined}
-                      onSelect={(date) =>
-                        setFormData({ ...formData, dateFin: date ? format(date, "yyyy-MM-dd") : "" })
-                      }
+                      selected={dateFin}
+                      onSelect={handleDateFinChange}
                       initialFocus
                     />
                   </PopoverContent>
                 </Popover>
               </div>
-              <div className="space-y-2">
+
+              <div className="space-y-2 col-span-2">
                 <Label>Date cible</Label>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -307,16 +334,14 @@ export const ProjectDialogs = ({
                       className="w-full justify-start text-left font-normal"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.dateCible ? format(new Date(formData.dateCible), "PPP", { locale: fr }) : "Sélectionner une date"}
+                      {dateCible ? format(dateCible, "PPP", { locale: fr }) : "Sélectionner une date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
-                      selected={formData.dateCible ? new Date(formData.dateCible) : undefined}
-                      onSelect={(date) =>
-                        setFormData({ ...formData, dateCible: date ? format(date, "yyyy-MM-dd") : "" })
-                      }
+                      selected={dateCible}
+                      onSelect={handleDateCibleChange}
                       initialFocus
                     />
                   </PopoverContent>
@@ -324,83 +349,84 @@ export const ProjectDialogs = ({
               </div>
             </div>
 
-            {/* Progression et Complexité */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="progressionPct">Progression (%)</Label>
-                <Input
-                  id="progressionPct"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={formData.progressionPct}
-                  onChange={(e) =>
-                    setFormData({ ...formData, progressionPct: parseFloat(e.target.value) || 0 })
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="niveauComplexite">Niveau de complexité</Label>
-                <Select
-                  value={formData.niveauComplexite}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, niveauComplexite: value })
-                  }
-                  disabled={loading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={loading ? "Chargement..." : "Sélectionner la complexité"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {niveauInfluences.map((niveau) => (
-                      <SelectItem key={niveau.id} value={niveau.description}>
-                        {niveau.description}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* Slider de progression */}
+            <div className="space-y-2 col-span-4">
+              <Label>Progression: {formData.progressionPct}%</Label>
+              <Slider
+                value={[formData.progressionPct]}
+                onValueChange={(value) => setFormData({ ...formData, progressionPct: value[0] })}
+                max={100}
+                min={0}
+                step={1}
+                className="w-full"
+              />
             </div>
 
-            {/* Switches */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="documentationDeposeeYn"
-                  checked={formData.documentationDeposeeYn}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, documentationDeposeeYn: checked })
-                  }
-                />
-                <Label htmlFor="documentationDeposeeYn">Documentation déposée</Label>
-              </div>
+            {/* Toggles avec Switch */}
+            <div className="flex space-x-8 col-span-3">
               <div className="flex items-center space-x-2">
                 <Switch
                   id="passationTermineeYn"
                   checked={formData.passationTermineeYn}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, passationTermineeYn: checked })
-                  }
+                  onCheckedChange={(checked) => setFormData({ ...formData, passationTermineeYn: checked })}
                 />
-                <Label htmlFor="passationTermineeYn">Passation terminée</Label>
+                <Label htmlFor="passationTermineeYn">Passation</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="visibiliteYn"
+                  checked={formData.visibiliteYn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, visibiliteYn: checked })}
+                />
+                <Label htmlFor="visibiliteYn">Visibilité</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="documentationDeposeeYn"
+                  checked={formData.documentationDeposeeYn}
+                  onCheckedChange={(checked) => setFormData({ ...formData, documentationDeposeeYn: checked })}
+                />
+                <Label htmlFor="documentationDeposeeYn">Documentation déposée</Label>
               </div>
             </div>
-          </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenAddDialog(false)}>
-              Annuler
-            </Button>
-            <Button onClick={handleAddProject} className="bg-inwi-purple/80 hover:bg-inwi-purple">
-              Créer le projet
-            </Button>
-          </DialogFooter>
+            {/* Rating de complexité */}
+            <div className="space-y-2 col-span-1">
+              <Label>Complexité</Label>
+              <Rating
+                value={formData.niveauComplexite}
+                onValueChange={(value) => setFormData({ ...formData, niveauComplexite: value })}
+              >
+                <RatingButton />
+                <RatingButton />
+                <RatingButton />
+                <RatingButton />
+                <RatingButton />
+              </Rating>
+            </div>
+
+            <div className="space-y-2 col-span-4">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Description"
+                rows={5}
+              />
+            </div>
+
+            <div className="col-span-4 flex justify-end gap-2">
+              <Button variant="outline" type="button" onClick={() => setOpenAddDialog(false)}>
+                Annuler
+              </Button>
+              <Button type="submit">Submit</Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
 
-
-       {/* Dialogue de suppression */}
+      {/* Dialogue de suppression */}
       <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
         <DialogContent>
           <DialogHeader>

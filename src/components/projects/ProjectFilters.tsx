@@ -11,6 +11,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Search, Filter, X, Star } from "lucide-react";
 import api from "@/services/api";
+import { getTypeProjets } from "@/services/typeProjetService";
+import { getStatutProjets } from "@/services/statutProjetService";
 
 interface ProjectFiltersProps {
   searchTerm: string;
@@ -52,17 +54,17 @@ const ProjectFilters: React.FC<ProjectFiltersProps> = ({
   useEffect(() => {
     const fetchFiltersData = async () => {
       try {
-        // const [typesRes, statutsRes] = await Promise.all([
-        //   api.get("/type_projet"),
-        //   api.get("/statut_projet"),
-        // ]);
+        const [typesRes, statutsRes] = await Promise.all([
+          getTypeProjets(),
+          getStatutProjets(),
+        ]);
 
-        // setTypesProjet(typesRes.data);
-        // setStatutsProjet(statutsRes.data);
+        setTypesProjet(typesRes);
+        setStatutsProjet(statutsRes);
         
         // Endpoints temporairement désactivés car ils n'existent pas
-        setTypesProjet([]);
-        setStatutsProjet([]);
+        // setTypesProjet([]);
+        // setStatutsProjet([]);
       } catch (error) {
         console.error("Error fetching filters data:", error);
       } finally {
@@ -116,7 +118,7 @@ const ProjectFilters: React.FC<ProjectFiltersProps> = ({
       {/* Filters Row */}
       <div className="flex flex-wrap items-center gap-4">
         {/* Type de projet */}
-        {/* <Select value={typeFilter} onValueChange={onTypeFilterChange}>
+        <Select value={typeFilter} onValueChange={onTypeFilterChange}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Tous types" />
           </SelectTrigger>
@@ -128,10 +130,10 @@ const ProjectFilters: React.FC<ProjectFiltersProps> = ({
               </SelectItem>
             ))}
           </SelectContent>
-        </Select> */}
+        </Select>
 
         {/* Statut projet */}
-        {/* <Select value={statusFilter} onValueChange={onStatusFilterChange}>
+        <Select value={statusFilter} onValueChange={onStatusFilterChange}>
           <SelectTrigger className="w-48">
             <SelectValue placeholder="Tous statuts" />
           </SelectTrigger>
@@ -143,7 +145,7 @@ const ProjectFilters: React.FC<ProjectFiltersProps> = ({
               </SelectItem>
             ))}
           </SelectContent>
-        </Select> */}
+        </Select>
 
         {/* Complexité */}
         <Select

@@ -51,19 +51,13 @@ import {
   SquarePen,
   ShieldMinus,
   ShieldCheck,
+  Copy,
 } from "lucide-react";
 import { Toaster, toast } from "sonner";
-import { getTemplates, addTemplate, deleteTemplate } from "@/services/templateService";
+import { getTemplates, addTemplate, deleteTemplate, updateTemplate, dupliquerTemplate } from "@/services/templateService";
 import { cn } from "@/lib/utils";
-import TemplateDisplateEtape from "@/components/template/TemplateDisplayEtape";
-import TemplateAddEtape from "@/components/template/TemplateAddEtape";
-import TemplateDisplayEtape from "@/components/template/TemplateDisplayEtape";
 
-type TemplateProjet = {
-  id: string;
-  description: string;
-  actifYn: boolean;
-};
+import type { TemplateProjet } from '@/services/templateService';
 
 export default function TemplateCrud() {
   // États principaux
@@ -84,6 +78,8 @@ export default function TemplateCrud() {
 
   // États pour les champs du formulaire
   const [formData, setFormData] = useState({
+    libelle: "",
+    version: "",
     description: "",
     actifYn: true,
     etapeModeles: [],
@@ -119,6 +115,8 @@ export default function TemplateCrud() {
   // Réinitialiser le formulaire
   const resetForm = () => {
     setFormData({
+      libelle: "",
+      version: "",
       description: "",
       actifYn: true,
       etapeModeles: [],
@@ -139,6 +137,8 @@ export default function TemplateCrud() {
   const handleEditClick = (template: TemplateProjet) => {
     setCurrentTemplate(template);
     setFormData({
+      libelle: template.libelle,
+      version: template.version,
       description: template.description,
       actifYn: template.actifYn,
       etapeModeles: [],
@@ -155,6 +155,8 @@ export default function TemplateCrud() {
   const handleAddTemplate = async () => {
     try {
       const newTemplate = {
+        libelle: formData.libelle.trim(),
+        version: formData.version.trim(),
         description: formData.description.trim(),
         actifYn: formData.actifYn,
         etapeModeles: formData.etapeModeles,
@@ -191,12 +193,11 @@ export default function TemplateCrud() {
   const handleToggleStatus = async (template: TemplateProjet) => {
     try {
       const newStatus = !template.actifYn;
-      const response = await getTemplates();
-      const updatedTemplates = response.map((t: TemplateProjet) =>
-        t.id === template.id ? { ...t, actifYn: newStatus } : t
+      // const updated = await updateTemplate(template.id, { actifYn: newStatus });
+      const updated = await updateTemplate(template.id, { ...template,actifYn: newStatus });
+      setTemplates((prev) =>
+        prev.map((t) => (t.id === template.id ? { ...t, actifYn: updated.actifYn } : t))
       );
-      setTemplates(updatedTemplates);
-
       toast.success(
         newStatus
           ? "Template activé avec succès"
@@ -204,13 +205,22 @@ export default function TemplateCrud() {
       );
     } catch (error) {
       toast.error(
-        `Erreur lors de ${
-          template.actifYn ? "la désactivation" : "l'activation"
-        } du template`
+        `Erreur lors de ${template.actifYn ? "la désactivation" : "l'activation"} du template`
       );
       console.error(error);
     }
   };
+
+  const handleDupliquerTemplate = async (id: string) => {
+    try{
+      const newTemplate = await dupliquerTemplate(id);
+      setTemplates([...templates, newTemplate]);
+      toast.success("Template dupliqué avec succès");
+    }catch(error){
+      toast.error("Erreur lors de la duplication du template");
+      console.error(error);
+    }
+  }
 
   return (
     <div className="container mx-auto py-8">
@@ -244,8 +254,9 @@ export default function TemplateCrud() {
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
+                  <TableHead>Libellé</TableHead>
                   <TableHead>Description</TableHead>
-                 
+                  <TableHead>Version</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -272,10 +283,25 @@ export default function TemplateCrud() {
                           className="font-medium hover:underline hover:cursor-pointer"
                           onClick={() => handleViewClick(template.id)}
                         >
+                          {template.libelle}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className="font-medium hover:underline hover:cursor-pointer"
+                          onClick={() => handleViewClick(template.id)}
+                        >
                           {template.description}
                         </span>
                       </TableCell>
-                      
+                      <TableCell>
+                        <span
+                          className="font-medium hover:underline hover:cursor-pointer"
+                          onClick={() => handleViewClick(template.id)}
+                        >
+                          {template.version}
+                        </span>
+                      </TableCell>
                       <TableCell>
                         <Badge
                           className={
@@ -308,17 +334,13 @@ export default function TemplateCrud() {
                               onClick={(e) => {
                                 handleDeleteClick(template);
                               }}
-                              className="text-red-600"
+                              
                             >
                               <Archive className="h-4 w-4 mr-2" />
                               Supprimer
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              className={cn(
-                                template.actifYn
-                                  ? "text-red-500"
-                                  : "text-green-500"
-                              )}
+                              
                               onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -333,6 +355,14 @@ export default function TemplateCrud() {
                                 <ShieldCheck className="h-4 w-4 mr-2" />
                               )}{" "}
                               {template.actifYn ? "Désactiver" : "Activer"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                handleDupliquerTemplate(template.id);
+                              }}
+                            >
+                              <Copy className="h-4 w-4 mr-2" />
+                              Dupliquer
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -363,14 +393,16 @@ export default function TemplateCrud() {
                   className="hover:shadow-lg transition-shadow"
                 >
                   <CardHeader>
-                    <div className="flex justify-between items-start">
+                    <div className="flex justify-between items-center">
                       <CardTitle>
                         <span
-                          className="text-inwi-purple cursor-pointer underline hover:text-inwi-dark-purple"
+                        className="font-medium hover:underline hover:cursor-pointer"
                           onClick={() => handleViewClick(template.id)}
                         >
-                          {template.description}
+                          {template.libelle}
                         </span>
+
+                        
                       </CardTitle>
 
                       <DropdownMenu>
@@ -392,17 +424,12 @@ export default function TemplateCrud() {
                             onClick={(e) => {
                               handleDeleteClick(template);
                             }}
-                            className="text-red-600"
                           >
                             <Archive className="h-4 w-4 mr-2" />
                             Supprimer
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            className={cn(
-                              template.actifYn
-                                ? "text-red-500"
-                                : "text-green-500"
-                            )}
+                            
                             onClick={(e) => {
                               handleToggleStatus(template);
                             }}
@@ -415,12 +442,22 @@ export default function TemplateCrud() {
                             )}{" "}
                             {template.actifYn ? "Désactiver" : "Activer"}
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                              onClick={(e) => {
+                                handleDupliquerTemplate(template.id);
+                              }}
+                            >
+                              <Copy className="h-4 w-4 mr-2" />
+                              Dupliquer
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Badge
+                  <div>{template.description}</div>
+                  <div className="flex justify-between items-center">
+                  <Badge
                       variant={template.actifYn ? "default" : "outline"}
                       className={
                         template.actifYn
@@ -430,6 +467,15 @@ export default function TemplateCrud() {
                     >
                       {template.actifYn ? "Actif" : "Inactif"}
                     </Badge>
+                    <Badge
+                      variant={template.actifYn ? "default" : "outline"}
+                      className="bg-blue-200 text-blue-800"
+                    >
+                      {template.version}
+                    </Badge>
+
+                  </div>
+                    
                   </CardContent>
             
                 </Card>
@@ -448,6 +494,40 @@ export default function TemplateCrud() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="libelle">Libellé</Label>
+                <Input
+                  id="libelle"
+                  value={formData.libelle}
+                  onChange={(e) =>
+                    setFormData({ ...formData, libelle: e.target.value })
+                  }
+                  placeholder="Libellé du template"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4 ">
+                <div className="space-y-2">
+                  <Label htmlFor="version">Version</Label>
+                  <Input
+                    id="version"
+                    value={formData.version}
+                    onChange={(e) =>
+                      setFormData({ ...formData, version: e.target.value })
+                    }
+                    placeholder="Version du template"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="actif">Actif</Label>
+                  <Switch
+                    id="actif"
+                    checked={formData.actifYn}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, actifYn: checked })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
@@ -457,16 +537,6 @@ export default function TemplateCrud() {
                   }
                   placeholder="Description du template"
                 />
-              </div>
-              <div className="flex items-center space-x-2 pt-2">
-                <Switch
-                  id="actif"
-                  checked={formData.actifYn}
-                  onCheckedChange={(checked) =>
-                    setFormData({ ...formData, actifYn: checked })
-                  }
-                />
-                <Label htmlFor="actif">Actif</Label>
               </div>
             </div>
           </div>

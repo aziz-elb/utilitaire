@@ -125,12 +125,12 @@ export default function TypeMembreCrud() {
 
     try {
       const updated = await updateTypeMembre({
-        typeMembreId: currentTypeMembre.typeMembreId,
+        id: currentTypeMembre.id,
         libelle: libelle.trim(),
         obligatoireYn: obligatoire,
       });
       const updatedTypesMembre = typesMembre.map((type) =>
-        type.typeMembreId === currentTypeMembre.typeMembreId ? updated : type
+        type.id === currentTypeMembre.id ? updated : type
       );
       setTypesMembre(updatedTypesMembre);
       setOpenEditDialog(false);
@@ -147,9 +147,9 @@ export default function TypeMembreCrud() {
     if (!currentTypeMembre) return;
 
     try {
-      await deleteTypeMembre(currentTypeMembre.typeMembreId);
+      await deleteTypeMembre(currentTypeMembre.id);
       const filteredTypesMembre = typesMembre.filter(
-        (type) => type.typeMembreId !== currentTypeMembre.typeMembreId
+        (type) => type.id !== currentTypeMembre.id
       );
       setTypesMembre(filteredTypesMembre);
       setOpenDeleteDialog(false);
@@ -198,8 +198,8 @@ export default function TypeMembreCrud() {
               </TableRow>
             ) : (
               typesMembre.map((type) => (
-                <TableRow key={type.typeMembreId}>
-                  <TableCell>{type.typeMembreId}</TableCell>
+                <TableRow key={type.id}>
+                  <TableCell>{type.id}</TableCell>
                   <TableCell>{type.libelle}</TableCell>
                   <TableCell>
                     <Badge className={type.obligatoireYn ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
@@ -291,7 +291,7 @@ export default function TypeMembreCrud() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">ID</Label>
-              <div className="col-span-3">{currentTypeMembre?.typeMembreId}</div>
+              <div className="col-span-3">{currentTypeMembre?.id}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Libellé</Label>

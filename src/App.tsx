@@ -22,6 +22,7 @@ import TemplateView from "./pages/TemplateView.js";
 import ProjectView from "./pages/ProjectView.js";
 import HelpPage from "./pages/Help.js";
 import Loading from "./pages/Loading.js";
+import Budget from "./pages/Budget.js";
 
 export default function App() {
   return (
@@ -47,10 +48,11 @@ export default function App() {
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/:id" element={<ProjectView />} />
               <Route path="/template" element={<Template />} />
-               <Route path="/template/:tempid" element={<TemplateView />} />
+              <Route path="/template/:tempid" element={<TemplateView />} />
               <Route path="/members" element={<Members />} />
+              <Route path="/budget" element={<Budget />} />
 
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/:tab" element={<Settings />} />
               <Route path="/help" element={<HelpPage />} />
             </Route>
 

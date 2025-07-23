@@ -9,6 +9,7 @@ import {
   EyeOff, // Type Partie Prenante
   TrendingUp, // Niveau Influence
   Activity, // Type Activite
+  UserCheck, // Rôles de projet
 } from "lucide-react";
 import TypeProjetCrud from "./TypeProjetCrud";
 import StatutProjetCrud from "./StatutProjetCrud";
@@ -17,7 +18,7 @@ import StatutEtapeCrud from "./StatutEtapeCrud";
 import TypeCommentaireCrud from "./TypeCommentaireCrud";
 import TypePartiePrenanteCrud from "./TypePartiePrenanteCrud";
 import NiveauInfluenceCrud from "./NiveauInfluenceCrud";
-import TypeActiviteCrud from "./TypeActiviteCrud";
+import RoleProjetCrud from "./RoleProjetCrud";
 
 
 
@@ -30,8 +31,8 @@ export default function ProjectConfig() {
     <div className="container mx-auto py-10">
       <Tabs defaultValue="liste" className="w-full">
         {/* En-tête des onglets */}
-        <TabsList className="grid w-full grid-cols-6  gap-1">
-          {/* <TabsTrigger
+        <TabsList className="grid w-full grid-cols-9  gap-1">
+          <TabsTrigger
             value="types_projets"
             className="flex justify-center items-center"
           >
@@ -45,7 +46,7 @@ export default function ProjectConfig() {
           >
             <Flag className="h-4 w-4 mr-2" />
             <span>Statut Projet</span>
-          </TabsTrigger> */}
+          </TabsTrigger>
 
           <TabsTrigger
             value="types_etapes"
@@ -63,13 +64,13 @@ export default function ProjectConfig() {
             <span>Statut Etape</span>
           </TabsTrigger>
 
-          {/* <TabsTrigger
-            value="types_commentaires"
+          <TabsTrigger
+            value="type_commentaire"
             className="flex justify-center items-center"
           >
             <MessageSquare className="h-4 w-4 mr-2" />
-            <span>Commentaire</span>
-          </TabsTrigger> */}
+            <span>Type Commentaire</span>
+          </TabsTrigger>
 
           <TabsTrigger
             value="type_partie_prenante"
@@ -88,12 +89,13 @@ export default function ProjectConfig() {
           </TabsTrigger>
 
           <TabsTrigger
-            value="type_activite"
+            value="roles_projets"
             className="flex justify-center items-center"
           >
-            <Activity className="h-4 w-4 mr-2" />
-            <span>Type Activité</span>
+            <UserCheck className="h-4 w-4 mr-2" />
+            <span>Rôles Projet</span>
           </TabsTrigger>
+
           <TabsTrigger value="" className="flex justify-center items-center">
           <EyeOff className="h-4 w-4 mr-2" />
         </TabsTrigger>
@@ -101,13 +103,13 @@ export default function ProjectConfig() {
 
         {/* Contenu des onglets */}
         <div className="mt-6">
-          {/* <TabsContent value="types_projets">
+          <TabsContent value="types_projets">
             <TypeProjetCrud />
           </TabsContent>
 
           <TabsContent value="statuts_projets">
             <StatutProjetCrud />
-          </TabsContent> */}
+          </TabsContent>
 
           <TabsContent value="types_etapes">
             <TypeEtapeCrud />
@@ -117,9 +119,9 @@ export default function ProjectConfig() {
             <StatutEtapeCrud />
           </TabsContent>
 
-          {/* <TabsContent value="types_commentaires">
+          <TabsContent value="type_commentaire">
             <TypeCommentaireCrud />
-          </TabsContent> */}
+          </TabsContent>
 
           <TabsContent value="type_partie_prenante">
             <TypePartiePrenanteCrud />
@@ -129,8 +131,8 @@ export default function ProjectConfig() {
             <NiveauInfluenceCrud />
           </TabsContent>
 
-          <TabsContent value="type_activite">
-            <TypeActiviteCrud />
+          <TabsContent value="roles_projets">
+            <RoleProjetCrud />
           </TabsContent>
         </div>
       </Tabs>

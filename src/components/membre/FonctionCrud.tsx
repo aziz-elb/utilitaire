@@ -118,11 +118,11 @@ export default function FonctionCrud() {
 
     try {
       const updated = await updateFonction({
-        fonctionId: currentFonction.fonctionId,
+        id: currentFonction.id,
         libelle: libelle.trim(),
       });
       const updatedFonctions = fonctions.map((fonction) =>
-        fonction.fonctionId === currentFonction.fonctionId ? updated : fonction
+        fonction.id === currentFonction.id ? updated : fonction
       );
       setFonctions(updatedFonctions);
       setOpenEditDialog(false);
@@ -139,9 +139,9 @@ export default function FonctionCrud() {
     if (!currentFonction) return;
 
     try {
-      await deleteFonction(currentFonction.fonctionId);
+      await deleteFonction(currentFonction.id);
       const filteredFonctions = fonctions.filter(
-        (fonction) => fonction.fonctionId !== currentFonction.fonctionId
+        (fonction) => fonction.id !== currentFonction.id
       );
       setFonctions(filteredFonctions);
       setOpenDeleteDialog(false);
@@ -189,8 +189,8 @@ export default function FonctionCrud() {
               </TableRow>
             ) : (
               fonctions.map((fonction) => (
-                <TableRow key={fonction.fonctionId}>
-                  <TableCell>{fonction.fonctionId}</TableCell>
+                <TableRow key={fonction.id}>
+                  <TableCell>{fonction.id}</TableCell>
                   <TableCell>{fonction.libelle}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -265,7 +265,7 @@ export default function FonctionCrud() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">ID</Label>
-              <div className="col-span-3">{currentFonction?.fonctionId}</div>
+              <div className="col-span-3">{currentFonction?.id}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Libellé</Label>

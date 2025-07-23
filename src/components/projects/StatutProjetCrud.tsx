@@ -35,62 +35,55 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import {
-  Archive,
   Edit,
   Eye,
   MoreHorizontal,
   CirclePlus,
   Trash2,
-  ChevronLeft,
 } from "lucide-react";
-import { Toaster, toast } from "sonner";
-import axios from "axios";
-import { cn } from "@/lib/utils";
-
-const API_URL = "http://localhost:8000/statut_projet";
-
-type StatutProjet = {
-  id: string;
-  libelle: string;
-};
+import { toast } from "sonner";
+import {
+  getStatutProjets,
+  addStatutProjet,
+  deleteStatutProjet,
+  updateStatutProjet,
+  type StatutProjet,
+} from "@/services/statutProjetService";
 
 export default function StatutProjetCrud() {
-  // États principaux
-  const [statutsProjet, setStatutsProjet] = useState<StatutProjet[]>([]);
+  const [statutProjets, setStatutProjets] = useState<StatutProjet[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
 
-  // États pour les modales
+  // Modals
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [currentStatut, setCurrentStatut] = useState<StatutProjet | null>(null);
 
-  // États pour les champs du formulaire
-  const [formData, setFormData] = useState({
+  // Form state
+  const [formData, setFormData] = useState<Omit<StatutProjet, "id">>({
     libelle: "",
   });
 
-  // Charger les données initiales
   useEffect(() => {
-    fetchStatutsProjet();
+    fetchStatutProjets();
   }, []);
 
-  const fetchStatutsProjet = async () => {
+  const fetchStatutProjets = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setStatutsProjet(response.data);
+      const data = await getStatutProjets();
+      setStatutProjets(data);
     } catch (error) {
-      toast.error("Erreur lors du chargement des statuts de projet");
+      toast.error("Erreur lors du chargement des statuts projet");
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Réinitialiser le formulaire
   const resetForm = () => {
     setFormData({
       libelle: "",
@@ -98,17 +91,15 @@ export default function StatutProjetCrud() {
     setCurrentStatut(null);
   };
 
-  // Gestion des clics
+  // Modal handlers
   const handleAddClick = () => {
     resetForm();
     setOpenAddDialog(true);
   };
-
   const handleViewClick = (statut: StatutProjet) => {
     setCurrentStatut(statut);
     setOpenViewDialog(true);
   };
-
   const handleEditClick = (statut: StatutProjet) => {
     setCurrentStatut(statut);
     setFormData({
@@ -116,84 +107,69 @@ export default function StatutProjetCrud() {
     });
     setOpenEditDialog(true);
   };
-
   const handleDeleteClick = (statut: StatutProjet) => {
     setCurrentStatut(statut);
     setOpenDeleteDialog(true);
   };
 
-  // Opérations CRUD
+  // CRUD
   const handleAddStatut = async () => {
     try {
-      const newStatut = {
-        libelle: formData.libelle.toLowerCase().trim(),
-      };
-
-      const response = await axios.post(API_URL, newStatut);
-      setStatutsProjet([...statutsProjet, response.data]);
+      const newStatut = await addStatutProjet({
+        libelle: formData.libelle.trim(),
+      });
+      setStatutProjets([...statutProjets, newStatut]);
       setOpenAddDialog(false);
       resetForm();
-      toast.success("Statut de projet ajouté avec succès");
+      toast.success("Statut projet ajouté avec succès");
     } catch (error) {
-      toast.error("Erreur lors de l'ajout du statut de projet");
+      toast.error("Erreur lors de l'ajout du statut projet");
       console.error(error);
     }
   };
 
   const handleEditStatut = async () => {
     if (!currentStatut) return;
-
     try {
-      const updatedStatut = {
-        libelle: formData.libelle.toLowerCase().trim(),
-      };
-
-      const response = await axios.put(
-        `${API_URL}/${currentStatut.id}`,
-        updatedStatut
+      const updatedStatut = await updateStatutProjet(currentStatut.id, {
+        libelle: formData.libelle.trim(),
+      });
+      const updatedList = statutProjets.map((t) =>
+        t.id === currentStatut.id ? updatedStatut : t
       );
-      const updatedStatuts = statutsProjet.map((t) =>
-        t.id === currentStatut.id ? response.data : t
-      );
-      setStatutsProjet(updatedStatuts);
+      setStatutProjets(updatedList);
       setOpenEditDialog(false);
       resetForm();
-      toast.success("Statut de projet modifié avec succès");
+      toast.success("Statut projet modifié avec succès");
     } catch (error) {
-      toast.error("Erreur lors de la modification du statut de projet");
+      toast.error("Erreur lors de la modification du statut projet");
       console.error(error);
     }
   };
 
   const handleDeleteStatut = async () => {
     if (!currentStatut) return;
-
     try {
-      await axios.delete(`${API_URL}/${currentStatut.id}`);
-      const filteredStatuts = statutsProjet.filter(
-        (t) => t.id !== currentStatut.id
-      );
-      setStatutsProjet(filteredStatuts);
+      await deleteStatutProjet(currentStatut.id);
+      const filtered = statutProjets.filter((t) => t.id !== currentStatut.id);
+      setStatutProjets(filtered);
       setOpenDeleteDialog(false);
       resetForm();
-      toast.success("Statut de projet supprimé avec succès");
+      toast.success("Statut projet supprimé avec succès");
     } catch (error) {
-      toast.error("Erreur lors de la suppression du statut de projet");
+      toast.error("Erreur lors de la suppression du statut projet");
       console.error(error);
     }
   };
 
   return (
     <div className="container mx-auto py-8">
-      <Toaster position="bottom-right" richColors />
-
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Gestion des statuts de projet</h1>
+        <h1 className="text-2xl font-bold">Gestion des statuts projet</h1>
         <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
-
       <Tabs
         defaultValue="table"
         onValueChange={(value) => setViewMode(value as "table" | "cards")}
@@ -206,9 +182,8 @@ export default function StatutProjetCrud() {
             <Eye className="h-4 w-4 mr-2" /> Vue Cartes
           </TabsTrigger>
         </TabsList>
-
         <TabsContent value="table">
-          {/* Tableau des statuts de projet */}
+          {/* Tableau des statuts projet */}
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
@@ -225,14 +200,14 @@ export default function StatutProjetCrud() {
                       Chargement...
                     </TableCell>
                   </TableRow>
-                ) : statutsProjet.length === 0 ? (
+                ) : statutProjets.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={3} className="text-center">
-                      Aucun statut de projet disponible
+                      Aucun statut projet disponible
                     </TableCell>
                   </TableRow>
                 ) : (
-                  statutsProjet.map((statut) => (
+                  statutProjets.map((statut) => (
                     <TableRow key={statut.id}>
                       <TableCell>{statut.id}</TableCell>
                       <TableCell>{statut.libelle}</TableCell>
@@ -244,22 +219,15 @@ export default function StatutProjetCrud() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent className="bg-white">
-                            <DropdownMenuItem
-                              onClick={() => handleViewClick(statut)}
-                            >
+                            <DropdownMenuItem onClick={() => handleViewClick(statut)}>
                               <Eye className="h-4 w-4 mr-2" />
                               Voir détails
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleEditClick(statut)}
-                            >
+                            <DropdownMenuItem onClick={() => handleEditClick(statut)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Modifier
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteClick(statut)}
-                              className="text-red-600"
-                            >
+                            <DropdownMenuItem onClick={() => handleDeleteClick(statut)} className="text-red-600">
                               <Trash2 className="h-4 w-4 mr-2" />
                               Supprimer
                             </DropdownMenuItem>
@@ -273,33 +241,30 @@ export default function StatutProjetCrud() {
             </Table>
           </div>
         </TabsContent>
-
         <TabsContent value="cards">
           {/* Affichage en cartes */}
           {loading ? (
             <div className="flex justify-center py-8">
-              <p>Chargement des statuts de projet...</p>
+              <p>Chargement des statuts projet...</p>
             </div>
-          ) : statutsProjet.length === 0 ? (
+          ) : statutProjets.length === 0 ? (
             <div className="flex justify-center py-8">
-              <p>Aucun statut de projet disponible</p>
+              <p>Aucun statut projet disponible</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {statutsProjet.map((statut) => (
+              {statutProjets.map((statut) => (
                 <Card
                   key={statut.id}
                   className="hover:shadow-lg transition-shadow"
                 >
                   <CardHeader>
-                    <CardTitle className="text-lg">
-                      Statut #{statut.id}
-                    </CardTitle>
+                    <CardTitle>{statut.libelle}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-1">
-                      <Label className="text-sm text-gray-500">Libellé</Label>
-                      <p className="text-sm">{statut.libelle}</p>
+                    <div className="flex flex-col space-y-1">
+                      <Label className="text-sm text-gray-500">ID</Label>
+                      <p>{statut.id}</p>
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
@@ -324,12 +289,11 @@ export default function StatutProjetCrud() {
           )}
         </TabsContent>
       </Tabs>
-
       {/* Modale d'ajout */}
       <Dialog open={openAddDialog} onOpenChange={setOpenAddDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ajouter un statut de projet</DialogTitle>
+            <DialogTitle>Ajouter un statut projet</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
@@ -337,10 +301,8 @@ export default function StatutProjetCrud() {
               <Input
                 id="libelle"
                 value={formData.libelle}
-                onChange={(e) =>
-                  setFormData({ ...formData, libelle: e.target.value })
-                }
-                placeholder="Libellé du statut de projet"
+                onChange={(e) => setFormData({ ...formData, libelle: e.target.value })}
+                placeholder="Nom du statut"
                 required
               />
             </div>
@@ -355,12 +317,11 @@ export default function StatutProjetCrud() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Modale de visualisation */}
       <Dialog open={openViewDialog} onOpenChange={setOpenViewDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Détails du statut de projet</DialogTitle>
+            <DialogTitle>Détails du statut projet</DialogTitle>
           </DialogHeader>
           {currentStatut && (
             <div className="grid gap-4 py-4">
@@ -381,12 +342,11 @@ export default function StatutProjetCrud() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Modale d'édition */}
       <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifier le statut de projet</DialogTitle>
+            <DialogTitle>Modifier le statut projet</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
@@ -394,10 +354,8 @@ export default function StatutProjetCrud() {
               <Input
                 id="edit_libelle"
                 value={formData.libelle}
-                onChange={(e) =>
-                  setFormData({ ...formData, libelle: e.target.value })
-                }
-                placeholder="Libellé du statut de projet"
+                onChange={(e) => setFormData({ ...formData, libelle: e.target.value })}
+                placeholder="Nom du statut"
                 required
               />
             </div>
@@ -412,14 +370,13 @@ export default function StatutProjetCrud() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Modale de suppression */}
       <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Supprimer le statut de projet</DialogTitle>
+            <DialogTitle>Supprimer le statut projet</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer le statut de projet{" "}
+              Êtes-vous sûr de vouloir supprimer le statut projet {" "}
               <span className="font-semibold">{currentStatut?.libelle}</span> ?
               Cette action est irréversible.
             </DialogDescription>

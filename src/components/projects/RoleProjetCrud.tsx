@@ -41,154 +41,136 @@ import {
   MoreHorizontal,
   CirclePlus,
   Trash2,
-  ChevronLeft,
 } from "lucide-react";
-import { Toaster, toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import {
-  getTypeActivites,
-  addTypeActivite,
-  updateTypeActivite,
-  deleteTypeActivite,
-  type TypeActivite,
-  type TypeActiviteInput,
-} from "@/services/typeActiviteService";
+  getRoleProjets,
+  addRoleProjet,
+  updateRoleProjet,
+  deleteRoleProjet,
+  type RoleProjet,
+} from "@/services/roleProjetService";
 
-export default function TypeActiviteCrud() {
-  // États principaux
-  const [typeActivites, setTypeActivites] = useState<TypeActivite[]>([]);
+export default function RoleProjetCrud() {
+  const [roleProjets, setRoleProjets] = useState<RoleProjet[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
 
-  // États pour les modales
+  // Modals
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openViewDialog, setOpenViewDialog] = useState(false);
-  const [currentType, setCurrentType] = useState<TypeActivite | null>(null);
+  const [currentRoleProjet, setCurrentRoleProjet] = useState<RoleProjet | null>(null);
 
-  // États pour les champs du formulaire
-  const [formData, setFormData] = useState<TypeActiviteInput>({
-    description: "",
+  // Form state
+  const [formData, setFormData] = useState<Omit<RoleProjet, "id">>({
+    libelle: "",
   });
 
-  // Charger les données initiales
   useEffect(() => {
-    fetchTypeActivites();
+    fetchRoleProjets();
   }, []);
 
-  const fetchTypeActivites = async () => {
+  const fetchRoleProjets = async () => {
     try {
       setLoading(true);
-      const data = await getTypeActivites();
-      setTypeActivites(data);
+      const data = await getRoleProjets();
+      setRoleProjets(data);
     } catch (error) {
-      toast.error("Erreur lors du chargement des types d'activité");
+      toast.error("Erreur lors du chargement des rôles de projet");
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Réinitialiser le formulaire
   const resetForm = () => {
     setFormData({
-      description: "",
+      libelle: "",
     });
-    setCurrentType(null);
+    setCurrentRoleProjet(null);
   };
 
-  // Gestion des clics
+  // Modal handlers
   const handleAddClick = () => {
     resetForm();
     setOpenAddDialog(true);
   };
-
-  const handleViewClick = (type: TypeActivite) => {
-    setCurrentType(type);
+  const handleViewClick = (roleProjet: RoleProjet) => {
+    setCurrentRoleProjet(roleProjet);
     setOpenViewDialog(true);
   };
-
-  const handleEditClick = (type: TypeActivite) => {
-    setCurrentType(type);
+  const handleEditClick = (roleProjet: RoleProjet) => {
+    setCurrentRoleProjet(roleProjet);
     setFormData({
-      description: type.description,
+      libelle: roleProjet.libelle,
     });
     setOpenEditDialog(true);
   };
-
-  const handleDeleteClick = (type: TypeActivite) => {
-    setCurrentType(type);
+  const handleDeleteClick = (roleProjet: RoleProjet) => {
+    setCurrentRoleProjet(roleProjet);
     setOpenDeleteDialog(true);
   };
 
-  // Opérations CRUD
-  const handleAddType = async () => {
+  // CRUD
+  const handleAddRoleProjet = async () => {
     try {
-      const newType = await addTypeActivite({
-        description: formData.description.trim(),
+      const newRoleProjet = await addRoleProjet({
+        libelle: formData.libelle.trim(),
       });
-      setTypeActivites([...typeActivites, newType]);
+      setRoleProjets([...roleProjets, newRoleProjet]);
       setOpenAddDialog(false);
       resetForm();
-      toast.success("Type d'activité ajouté avec succès");
+      toast.success("Rôle de projet ajouté avec succès");
     } catch (error) {
-      toast.error("Erreur lors de l'ajout du type d'activité");
+      toast.error("Erreur lors de l'ajout du rôle de projet");
       console.error(error);
     }
   };
 
-  const handleEditType = async () => {
-    if (!currentType) return;
-
+  const handleEditRoleProjet = async () => {
+    if (!currentRoleProjet) return;
     try {
-      const updatedType = await updateTypeActivite(currentType.id, {
-        description: formData.description.trim(),
+      const updatedRoleProjet = await updateRoleProjet(currentRoleProjet.id, {
+        libelle: formData.libelle.trim(),
       });
-      const updatedTypes = typeActivites.map((t) =>
-        t.id === currentType.id ? updatedType : t
+      const updatedList = roleProjets.map((r) =>
+        r.id === currentRoleProjet.id ? updatedRoleProjet : r
       );
-      setTypeActivites(updatedTypes);
+      setRoleProjets(updatedList);
       setOpenEditDialog(false);
       resetForm();
-      toast.success("Type d'activité modifié avec succès");
+      toast.success("Rôle de projet modifié avec succès");
     } catch (error) {
-      toast.error("Erreur lors de la modification du type d'activité");
+      toast.error("Erreur lors de la modification du rôle de projet");
       console.error(error);
     }
   };
 
-  const handleDeleteType = async () => {
-    if (!currentType) return;
-
+  const handleDeleteRoleProjet = async () => {
+    if (!currentRoleProjet) return;
     try {
-      await deleteTypeActivite(currentType.id);
-      const filteredTypes = typeActivites.filter(
-        (t) => t.id !== currentType.id
-      );
-      setTypeActivites(filteredTypes);
+      await deleteRoleProjet(currentRoleProjet.id);
+      const filtered = roleProjets.filter((r) => r.id !== currentRoleProjet.id);
+      setRoleProjets(filtered);
       setOpenDeleteDialog(false);
       resetForm();
-      toast.success("Type d'activité supprimé avec succès");
+      toast.success("Rôle de projet supprimé avec succès");
     } catch (error) {
-      toast.error("Erreur lors de la suppression du type d'activité");
+      toast.error("Erreur lors de la suppression du rôle de projet");
       console.error(error);
     }
   };
 
   return (
     <div className="container mx-auto py-8">
-      <Toaster position="bottom-right" richColors />
-
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">
-          Gestion des types d'activité
-        </h1>
+        <h1 className="text-2xl font-bold">Gestion des rôles de projet</h1>
         <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
-
       <Tabs
         defaultValue="table"
         onValueChange={(value) => setViewMode(value as "table" | "cards")}
@@ -201,9 +183,8 @@ export default function TypeActiviteCrud() {
             <Eye className="h-4 w-4 mr-2" /> Vue Cartes
           </TabsTrigger>
         </TabsList>
-
         <TabsContent value="table">
-          {/* Tableau des types d'activité */}
+          {/* Tableau des rôles de projet */}
           <div className="border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
@@ -220,17 +201,17 @@ export default function TypeActiviteCrud() {
                       Chargement...
                     </TableCell>
                   </TableRow>
-                ) : typeActivites.length === 0 ? (
+                ) : roleProjets.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={3} className="text-center">
-                      Aucun type d'activité disponible
+                      Aucun rôle de projet disponible
                     </TableCell>
                   </TableRow>
                 ) : (
-                  typeActivites.map((type) => (
-                    <TableRow key={type.id}>
-                      <TableCell>{type.id}</TableCell>
-                      <TableCell>{type.description}</TableCell>
+                  roleProjets.map((roleProjet) => (
+                    <TableRow key={roleProjet.id}>
+                      <TableCell>{roleProjet.id}</TableCell>
+                      <TableCell>{roleProjet.libelle}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -239,22 +220,15 @@ export default function TypeActiviteCrud() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent className="bg-white">
-                            <DropdownMenuItem
-                              onClick={() => handleViewClick(type)}
-                            >
+                            <DropdownMenuItem onClick={() => handleViewClick(roleProjet)}>
                               <Eye className="h-4 w-4 mr-2" />
                               Voir détails
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleEditClick(type)}
-                            >
+                            <DropdownMenuItem onClick={() => handleEditClick(roleProjet)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Modifier
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteClick(type)}
-                              className="text-red-600"
-                            >
+                            <DropdownMenuItem onClick={() => handleDeleteClick(roleProjet)} className="text-red-600">
                               <Trash2 className="h-4 w-4 mr-2" />
                               Supprimer
                             </DropdownMenuItem>
@@ -268,45 +242,44 @@ export default function TypeActiviteCrud() {
             </Table>
           </div>
         </TabsContent>
-
         <TabsContent value="cards">
           {/* Affichage en cartes */}
           {loading ? (
             <div className="flex justify-center py-8">
-              <p>Chargement des types d'activité...</p>
+              <p>Chargement des rôles de projet...</p>
             </div>
-          ) : typeActivites.length === 0 ? (
+          ) : roleProjets.length === 0 ? (
             <div className="flex justify-center py-8">
-              <p>Aucun type d'activité disponible</p>
+              <p>Aucun rôle de projet disponible</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {typeActivites.map((type) => (
+              {roleProjets.map((roleProjet) => (
                 <Card
-                  key={type.id}
+                  key={roleProjet.id}
                   className="hover:shadow-lg transition-shadow"
                 >
                   <CardHeader>
-                    <CardTitle>{type.description}</CardTitle>
+                    <CardTitle>{roleProjet.libelle}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-col space-y-1">
                       <Label className="text-sm text-gray-500">ID</Label>
-                      <p>{type.id}</p>
+                      <p>{roleProjet.id}</p>
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleViewClick(type)}
+                      onClick={() => handleViewClick(roleProjet)}
                     >
                       <Eye className="h-4 w-4 mr-2" /> Voir
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleEditClick(type)}
+                      onClick={() => handleEditClick(roleProjet)}
                     >
                       <Edit className="h-4 w-4 mr-2" /> Modifier
                     </Button>
@@ -317,23 +290,20 @@ export default function TypeActiviteCrud() {
           )}
         </TabsContent>
       </Tabs>
-
       {/* Modale d'ajout */}
       <Dialog open={openAddDialog} onOpenChange={setOpenAddDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ajouter un type d'activité</DialogTitle>
+            <DialogTitle>Ajouter un rôle de projet</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="libelle">Libellé</Label>
               <Input
-                id="description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Nom du type"
+                id="libelle"
+                value={formData.libelle}
+                onChange={(e) => setFormData({ ...formData, libelle: e.target.value })}
+                placeholder="Nom du rôle"
                 required
               />
             </div>
@@ -342,29 +312,28 @@ export default function TypeActiviteCrud() {
             <Button variant="outline" onClick={() => setOpenAddDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleAddType} className="inwi_btn">
+            <Button type="submit" onClick={handleAddRoleProjet} className="inwi_btn">
               Ajouter
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Modale de visualisation */}
       <Dialog open={openViewDialog} onOpenChange={setOpenViewDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Détails du type d'activité</DialogTitle>
+            <DialogTitle>Détails du rôle de projet</DialogTitle>
           </DialogHeader>
-          {currentType && (
+          {currentRoleProjet && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <Label className="text-gray-500">ID</Label>
-                  <div>{currentType.id}</div>
+                  <div>{currentRoleProjet.id}</div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-gray-500">Description</Label>
-                  <div>{currentType.description}</div>
+                  <Label className="text-gray-500">Libellé</Label>
+                  <div>{currentRoleProjet.libelle}</div>
                 </div>
               </div>
             </div>
@@ -374,23 +343,20 @@ export default function TypeActiviteCrud() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Modale d'édition */}
       <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifier le type d'activité</DialogTitle>
+            <DialogTitle>Modifier le rôle de projet</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit_description">Description</Label>
+              <Label htmlFor="edit_libelle">Libellé</Label>
               <Input
-                id="edit_description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Nom du type"
+                id="edit_libelle"
+                value={formData.libelle}
+                onChange={(e) => setFormData({ ...formData, libelle: e.target.value })}
+                placeholder="Nom du rôle"
                 required
               />
             </div>
@@ -399,21 +365,20 @@ export default function TypeActiviteCrud() {
             <Button variant="outline" onClick={() => setOpenEditDialog(false)}>
               Annuler
             </Button>
-            <Button type="submit" onClick={handleEditType} className="inwi_btn">
+            <Button type="submit" onClick={handleEditRoleProjet} className="inwi_btn">
               Enregistrer
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Modale de suppression */}
       <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Supprimer le type d'activité</DialogTitle>
+            <DialogTitle>Supprimer le rôle de projet</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer le type d'activité{" "}
-              <span className="font-semibold">{currentType?.description}</span> ?
+              Êtes-vous sûr de vouloir supprimer le rôle de projet {" "}
+              <span className="font-semibold">{currentRoleProjet?.libelle}</span> ?
               Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
@@ -424,7 +389,7 @@ export default function TypeActiviteCrud() {
             >
               Annuler
             </Button>
-            <Button variant="destructive" onClick={handleDeleteType} className="inwi_btn">
+            <Button variant="destructive" onClick={handleDeleteRoleProjet} className="inwi_btn">
               Supprimer
             </Button>
           </DialogFooter>

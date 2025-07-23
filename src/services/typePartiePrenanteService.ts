@@ -2,13 +2,11 @@ import api from './api';
 
 export interface TypePartiePrenante {
   id: string;
-  description: string;
-  code?: string;
-  actif?: boolean;
+  libelle: string;
 }
 
 export interface TypePartiePrenanteInput {
-  description: string;
+  libelle: string;
 }
 
 export const getTypePartiePrenantes = async (): Promise<TypePartiePrenante[]> => {

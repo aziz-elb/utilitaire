@@ -73,7 +73,7 @@ export default function TypePartiePrenanteCrud() {
 
   // États pour les champs du formulaire
   const [formData, setFormData] = useState<TypePartiePrenanteInput>({
-    description: "",
+    libelle: "",
   });
 
   // Charger les données initiales
@@ -97,7 +97,7 @@ export default function TypePartiePrenanteCrud() {
   // Réinitialiser le formulaire
   const resetForm = () => {
     setFormData({
-      description: "",
+      libelle: "",
     });
     setCurrentType(null);
   };
@@ -116,7 +116,7 @@ export default function TypePartiePrenanteCrud() {
   const handleEditClick = (type: TypePartiePrenante) => {
     setCurrentType(type);
     setFormData({
-      description: type.description,
+      libelle: type.libelle,
     });
     setOpenEditDialog(true);
   };
@@ -130,7 +130,7 @@ export default function TypePartiePrenanteCrud() {
   const handleAddType = async () => {
     try {
       const newType = await addTypePartiePrenante({
-        description: formData.description.trim(),
+        libelle: formData.libelle.trim(),
       });
       setTypesPartiePrenante([...typesPartiePrenante, newType]);
       setOpenAddDialog(false);
@@ -147,7 +147,7 @@ export default function TypePartiePrenanteCrud() {
 
     try {
       const updatedType = await updateTypePartiePrenante(currentType.id, {
-        description: formData.description.trim(),
+        libelle: formData.libelle.trim(),
       });
       const updatedTypes = typesPartiePrenante.map((t) =>
         t.id === currentType.id ? updatedType : t
@@ -234,7 +234,7 @@ export default function TypePartiePrenanteCrud() {
                   typesPartiePrenante.map((type) => (
                     <TableRow key={type.id}>
                       <TableCell>{type.id}</TableCell>
-                      <TableCell>{type.description}</TableCell>
+                      <TableCell>{type.libelle}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -291,7 +291,7 @@ export default function TypePartiePrenanteCrud() {
                   className="hover:shadow-lg transition-shadow"
                 >
                   <CardHeader>
-                                          <CardTitle>{type.description}</CardTitle>
+                                          <CardTitle>{type.libelle}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-col space-y-1">
@@ -330,14 +330,14 @@ export default function TypePartiePrenanteCrud() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="libelle">Libellé</Label>
               <Input
-                id="description"
-                value={formData.description}
+                id="libelle"
+                value={formData.libelle}
                 onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
+                  setFormData({ ...formData, libelle: e.target.value })
                 }
-                placeholder="Nom du type"
+                placeholder="Libellé du type de partie prenante"
                 required
               />
             </div>
@@ -367,8 +367,8 @@ export default function TypePartiePrenanteCrud() {
                   <div>{currentType.id}</div>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-gray-500">Description</Label>
-                  <div>{currentType.description}</div>
+                  <Label className="text-gray-500">Libellé</Label>
+                  <div>{currentType.libelle}</div>
                 </div>
               </div>
             </div>
@@ -387,14 +387,14 @@ export default function TypePartiePrenanteCrud() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit_description">Description</Label>
+              <Label htmlFor="libelle">Libellé</Label>
               <Input
-                id="edit_description"
-                value={formData.description}
+                id="libelle"
+                value={formData.libelle}
                 onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
+                  setFormData({ ...formData, libelle: e.target.value })
                 }
-                placeholder="Nom du type"
+                placeholder="Libellé du type de partie prenante"
                 required
               />
             </div>
@@ -417,7 +417,7 @@ export default function TypePartiePrenanteCrud() {
             <DialogTitle>Supprimer le type de partie prenante</DialogTitle>
             <DialogDescription>
               Êtes-vous sûr de vouloir supprimer le type de partie prenante{" "}
-              <span className="font-semibold">{currentType?.description}</span> ?
+              <span className="font-semibold">{currentType?.libelle}</span> ?
               Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>

@@ -74,7 +74,7 @@ export default function StatutEtapeCrud() {
 
   // États pour les champs du formulaire
   const [formData, setFormData] = useState<StatutEtapeInput>({
-    description: "",
+    libelle: "",
   });
 
   // Charger les données initiales
@@ -98,7 +98,7 @@ export default function StatutEtapeCrud() {
   // Réinitialiser le formulaire
   const resetForm = () => {
     setFormData({
-      description: "",
+      libelle: "",
     });
     setCurrentStatut(null);
   };
@@ -117,7 +117,7 @@ export default function StatutEtapeCrud() {
   const handleEditClick = (statut: StatutEtape) => {
     setCurrentStatut(statut);
     setFormData({
-      description: statut.description,
+      libelle: statut.libelle,
     });
     setOpenEditDialog(true);
   };
@@ -131,7 +131,7 @@ export default function StatutEtapeCrud() {
   const handleAddStatut = async () => {
     try {
       const newStatut = await addStatutEtape({
-        description: formData.description.trim(),
+        libelle: formData.libelle.trim(),
       });
       setStatutsEtape([...statutsEtape, newStatut]);
       setOpenAddDialog(false);
@@ -148,7 +148,7 @@ export default function StatutEtapeCrud() {
 
     try {
       const updatedStatut = await updateStatutEtape(currentStatut.id, {
-        description: formData.description.trim(),
+        libelle: formData.libelle.trim(),
       });
       const updatedStatuts = statutsEtape.map((t) =>
         t.id === currentStatut.id ? updatedStatut : t
@@ -231,7 +231,7 @@ export default function StatutEtapeCrud() {
                   statutsEtape.map((statut) => (
                     <TableRow key={statut.id}>
                       <TableCell>{statut.id}</TableCell>
-                      <TableCell>{statut.description}</TableCell>
+                      <TableCell>{statut.libelle}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -286,7 +286,7 @@ export default function StatutEtapeCrud() {
                   <CardContent>
                     <div className="space-y-1">
                       <Label className="text-sm text-gray-500">Libellé</Label>
-                      <p className="text-sm">{statut.description}</p>
+                      <p className="text-sm">{statut.libelle}</p>
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
@@ -320,12 +320,12 @@ export default function StatutEtapeCrud() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="description">Libellé</Label>
+              <Label htmlFor="libelle">Libellé</Label>
               <Input
-                id="description"
-                value={formData.description}
+                id="libelle"
+                value={formData.libelle}
                 onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
+                  setFormData({ ...formData, libelle: e.target.value })
                 }
                 placeholder="Libellé du statut d'étape"
                 required
@@ -358,7 +358,7 @@ export default function StatutEtapeCrud() {
                 </div>
                 <div className="space-y-1">
                   <Label className="text-gray-500">Libellé</Label>
-                  <div>{currentStatut.description}</div>
+                  <div>{currentStatut.libelle}</div>
                 </div>
               </div>
             </div>
@@ -377,12 +377,12 @@ export default function StatutEtapeCrud() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="edit_description">Libellé</Label>
+              <Label htmlFor="libelle">Libellé</Label>
               <Input
-                id="edit_description"
-                value={formData.description}
+                id="libelle"
+                value={formData.libelle}
                 onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
+                  setFormData({ ...formData, libelle: e.target.value })
                 }
                 placeholder="Libellé du statut d'étape"
                 required
@@ -407,7 +407,7 @@ export default function StatutEtapeCrud() {
             <DialogTitle>Supprimer le statut d'étape</DialogTitle>
             <DialogDescription>
               Êtes-vous sûr de vouloir supprimer le statut d'étape{" "}
-              <span className="font-semibold">{currentStatut?.description}</span> ?
+              <span className="font-semibold">{currentStatut?.libelle}</span> ?
               Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>

@@ -26,12 +26,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Card,
   CardHeader,
@@ -40,53 +35,47 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import {
-  Archive,
   Edit,
   Eye,
   MoreHorizontal,
   CirclePlus,
   Trash2,
-  ChevronLeft,
 } from "lucide-react";
-import { Toaster, toast } from "sonner";
-import axios from "axios";
-import { cn } from "@/lib/utils";
-
-const API_URL = "http://localhost:8000/type_commentaire";
-
-type TypeCommentaire = {
-  id: string;
-  description: string;
-};
+import { toast } from "sonner";
+import {
+  getTypeCommentaires,
+  addTypeCommentaire,
+  updateTypeCommentaire,
+  deleteTypeCommentaire,
+  type TypeCommentaire,
+} from "@/services/typeCommentaireService";
 
 export default function TypeCommentaireCrud() {
-  // États principaux
-  const [typesCommentaire, setTypesCommentaire] = useState<TypeCommentaire[]>([]);
+  const [typeCommentaires, setTypeCommentaires] = useState<TypeCommentaire[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
 
-  // États pour les modales
+  // Modals
   const [openAddDialog, setOpenAddDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [currentType, setCurrentType] = useState<TypeCommentaire | null>(null);
 
-  // États pour les champs du formulaire
-  const [formData, setFormData] = useState({
+  // Form state
+  const [formData, setFormData] = useState<Omit<TypeCommentaire, "id">>({
     description: "",
   });
 
-  // Charger les données initiales
   useEffect(() => {
-    fetchTypesCommentaire();
+    fetchTypeCommentaires();
   }, []);
 
-  const fetchTypesCommentaire = async () => {
+  const fetchTypeCommentaires = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(API_URL);
-      setTypesCommentaire(response.data);
+      const data = await getTypeCommentaires();
+      setTypeCommentaires(data);
     } catch (error) {
       toast.error("Erreur lors du chargement des types de commentaire");
       console.error(error);
@@ -95,7 +84,6 @@ export default function TypeCommentaireCrud() {
     }
   };
 
-  // Réinitialiser le formulaire
   const resetForm = () => {
     setFormData({
       description: "",
@@ -103,17 +91,15 @@ export default function TypeCommentaireCrud() {
     setCurrentType(null);
   };
 
-  // Gestion des clics
+  // Modal handlers
   const handleAddClick = () => {
     resetForm();
     setOpenAddDialog(true);
   };
-
   const handleViewClick = (type: TypeCommentaire) => {
     setCurrentType(type);
     setOpenViewDialog(true);
   };
-
   const handleEditClick = (type: TypeCommentaire) => {
     setCurrentType(type);
     setFormData({
@@ -121,79 +107,69 @@ export default function TypeCommentaireCrud() {
     });
     setOpenEditDialog(true);
   };
-
   const handleDeleteClick = (type: TypeCommentaire) => {
     setCurrentType(type);
     setOpenDeleteDialog(true);
   };
 
-  // Opérations CRUD
+  // CRUD
   const handleAddType = async () => {
     try {
-      const newType = {
-        description: formData.description.toLowerCase().trim(),
-      };
-
-      const response = await axios.post(API_URL, newType);
-      setTypesCommentaire([...typesCommentaire, response.data]);
+      const newType = await addTypeCommentaire({
+        description: formData.description.trim(),
+      });
+      setTypeCommentaires([...typeCommentaires, newType]);
       setOpenAddDialog(false);
       resetForm();
-      toast.success("Type de commentaire ajouté avec succès");
+      toast.success("Type commentaire ajouté avec succès");
     } catch (error) {
-      toast.error("Erreur lors de l'ajout du type de commentaire");
+      toast.error("Erreur lors de l'ajout du type commentaire");
       console.error(error);
     }
   };
 
   const handleEditType = async () => {
     if (!currentType) return;
-
     try {
-      const updatedType = {
-        description: formData.description.toLowerCase().trim(),
-      };
-
-      const response = await axios.put(`${API_URL}/${currentType.id}`, updatedType);
-      const updatedTypes = typesCommentaire.map((t) =>
-        t.id === currentType.id ? response.data : t
+      const updatedType = await updateTypeCommentaire(currentType.id, {
+        description: formData.description.trim(),
+      });
+      const updatedList = typeCommentaires.map((t) =>
+        t.id === currentType.id ? updatedType : t
       );
-      setTypesCommentaire(updatedTypes);
+      setTypeCommentaires(updatedList);
       setOpenEditDialog(false);
       resetForm();
-      toast.success("Type de commentaire modifié avec succès");
+      toast.success("Type commentaire modifié avec succès");
     } catch (error) {
-      toast.error("Erreur lors de la modification du type de commentaire");
+      toast.error("Erreur lors de la modification du type commentaire");
       console.error(error);
     }
   };
 
   const handleDeleteType = async () => {
     if (!currentType) return;
-
     try {
-      await axios.delete(`${API_URL}/${currentType.id}`);
-      const filteredTypes = typesCommentaire.filter((t) => t.id !== currentType.id);
-      setTypesCommentaire(filteredTypes);
+      await deleteTypeCommentaire(currentType.id);
+      const filtered = typeCommentaires.filter((t) => t.id !== currentType.id);
+      setTypeCommentaires(filtered);
       setOpenDeleteDialog(false);
       resetForm();
-      toast.success("Type de commentaire supprimé avec succès");
+      toast.success("Type commentaire supprimé avec succès");
     } catch (error) {
-      toast.error("Erreur lors de la suppression du type de commentaire");
+      toast.error("Erreur lors de la suppression du type commentaire");
       console.error(error);
     }
   };
 
   return (
     <div className="container mx-auto py-8">
-      <Toaster position="bottom-right" richColors />
-
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Gestion des types de commentaire</h1>
         <Button onClick={handleAddClick} className="inwi_btn">
           Ajouter <CirclePlus className="ml-2" />
         </Button>
       </div>
-
       <Tabs
         defaultValue="table"
         onValueChange={(value) => setViewMode(value as "table" | "cards")}
@@ -206,7 +182,6 @@ export default function TypeCommentaireCrud() {
             <Eye className="h-4 w-4 mr-2" /> Vue Cartes
           </TabsTrigger>
         </TabsList>
-
         <TabsContent value="table">
           {/* Tableau des types de commentaire */}
           <div className="border rounded-lg overflow-hidden">
@@ -225,14 +200,14 @@ export default function TypeCommentaireCrud() {
                       Chargement...
                     </TableCell>
                   </TableRow>
-                ) : typesCommentaire.length === 0 ? (
+                ) : typeCommentaires.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={3} className="text-center">
-                      Aucun type de commentaire disponible
+                      Aucun type commentaire disponible
                     </TableCell>
                   </TableRow>
                 ) : (
-                  typesCommentaire.map((type) => (
+                  typeCommentaires.map((type) => (
                     <TableRow key={type.id}>
                       <TableCell>{type.id}</TableCell>
                       <TableCell>{type.description}</TableCell>
@@ -252,10 +227,7 @@ export default function TypeCommentaireCrud() {
                               <Edit className="h-4 w-4 mr-2" />
                               Modifier
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteClick(type)}
-                              className="text-red-600"
-                            >
+                            <DropdownMenuItem onClick={() => handleDeleteClick(type)} className="text-red-600">
                               <Trash2 className="h-4 w-4 mr-2" />
                               Supprimer
                             </DropdownMenuItem>
@@ -269,28 +241,30 @@ export default function TypeCommentaireCrud() {
             </Table>
           </div>
         </TabsContent>
-
         <TabsContent value="cards">
           {/* Affichage en cartes */}
           {loading ? (
             <div className="flex justify-center py-8">
               <p>Chargement des types de commentaire...</p>
             </div>
-          ) : typesCommentaire.length === 0 ? (
+          ) : typeCommentaires.length === 0 ? (
             <div className="flex justify-center py-8">
-              <p>Aucun type de commentaire disponible</p>
+              <p>Aucun type commentaire disponible</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {typesCommentaire.map((type) => (
-                <Card key={type.id} className="hover:shadow-lg transition-shadow">
+              {typeCommentaires.map((type) => (
+                <Card
+                  key={type.id}
+                  className="hover:shadow-lg transition-shadow"
+                >
                   <CardHeader>
-                    <CardTitle className="text-lg">Type #{type.id}</CardTitle>
+                    <CardTitle>{type.description}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-1">
-                      <Label className="text-sm text-gray-500">Description</Label>
-                      <p className="text-sm">{type.description}</p>
+                    <div className="flex flex-col space-y-1">
+                      <Label className="text-sm text-gray-500">ID</Label>
+                      <p>{type.id}</p>
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
@@ -315,12 +289,11 @@ export default function TypeCommentaireCrud() {
           )}
         </TabsContent>
       </Tabs>
-
       {/* Modale d'ajout */}
       <Dialog open={openAddDialog} onOpenChange={setOpenAddDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ajouter un type de commentaire</DialogTitle>
+            <DialogTitle>Ajouter un type commentaire</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
@@ -328,10 +301,8 @@ export default function TypeCommentaireCrud() {
               <Input
                 id="description"
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Description du type de commentaire"
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Description du type"
                 required
               />
             </div>
@@ -346,12 +317,11 @@ export default function TypeCommentaireCrud() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Modale de visualisation */}
       <Dialog open={openViewDialog} onOpenChange={setOpenViewDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Détails du type de commentaire</DialogTitle>
+            <DialogTitle>Détails du type commentaire</DialogTitle>
           </DialogHeader>
           {currentType && (
             <div className="grid gap-4 py-4">
@@ -372,12 +342,11 @@ export default function TypeCommentaireCrud() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Modale d'édition */}
       <Dialog open={openEditDialog} onOpenChange={setOpenEditDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Modifier le type de commentaire</DialogTitle>
+            <DialogTitle>Modifier le type commentaire</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
@@ -385,10 +354,8 @@ export default function TypeCommentaireCrud() {
               <Input
                 id="edit_description"
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                placeholder="Description du type de commentaire"
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Description du type"
                 required
               />
             </div>
@@ -403,20 +370,22 @@ export default function TypeCommentaireCrud() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Modale de suppression */}
       <Dialog open={openDeleteDialog} onOpenChange={setOpenDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Supprimer le type de commentaire</DialogTitle>
+            <DialogTitle>Supprimer le type commentaire</DialogTitle>
             <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer le type de commentaire{" "}
+              Êtes-vous sûr de vouloir supprimer le type commentaire {" "}
               <span className="font-semibold">{currentType?.description}</span> ?
               Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenDeleteDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setOpenDeleteDialog(false)}
+            >
               Annuler
             </Button>
             <Button variant="destructive" onClick={handleDeleteType} className="inwi_btn">

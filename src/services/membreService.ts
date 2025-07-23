@@ -1,4 +1,8 @@
 import api from './api';
+import type { Entite } from './entiteService';
+import type { Fonction } from './fonctionService';
+import type { TypeMembre } from './typeMembreService';
+import type { Role } from './roleService';
 
 const BASE_URL = '/membres';
 
@@ -9,12 +13,12 @@ export interface Membre {
   telephone: string;
   interneYn: boolean;
   actifYn: boolean;
-  role: string;
-  profilePictureUrl: string;
+  role: Role; // now an object
+  profilePictureUrl?: string;
   dateCreation: string;
-  typeMembreId: string;
-  entiteId: string;
-  fonctionId: string;
+  typeMembreId: string; // now an object
+  entiteId: string; // now an object
+  fonctionId: string; // now an object
   keycloakUserId: string;
   pendingEmail?: string | null;
   pendingEmailToken?: string | null;
@@ -26,7 +30,7 @@ export interface MembreInput {
   telephone: string;
   interneYn: boolean;
   actifYn: boolean;
-  role: string;
+  role: string; // still string for API
   photoProfile?: string;
   password?: string;
   typeMembreId: string;
@@ -63,6 +67,11 @@ export const deleteMembre = async (membreId: string): Promise<void> => {
   await api.delete(`${BASE_URL}/${membreId}`);
 };
 
+export const assignMembreToRole = async (membreKeycloakId: string, roleName: string): Promise<void> => {
+const response = await api.post(`/roles/${roleName}/assign-user/${membreKeycloakId}`);
+return response.data;
+}
+
 export default {
   getMembres,
   getMembreById,
@@ -70,4 +79,5 @@ export default {
   updateMembre,
   updateMembrePartial,
   deleteMembre,
+  assignMembreToRole,
 }; 

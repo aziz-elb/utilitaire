@@ -145,7 +145,7 @@ export default function RoleCrud() {
   const handleDeleteRole = async () => {
     if (!currentRole) return;
     try {
-      await deleteRole(currentRole.id);
+      await deleteRole(currentRole.name);
       await fetchRolesList();
       setOpenDeleteDialog(false);
       resetForm();

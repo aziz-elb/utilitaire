@@ -2,11 +2,11 @@ import api from './api';
 
 export interface TypeEtape {
   id: string;
-  description: string;
+  libelle: string;
 }
 
 export interface TypeEtapeInput {
-  description: string;
+  libelle: string;
 }
 
 export const getTypeEtapes = async (): Promise<TypeEtape[]> => {

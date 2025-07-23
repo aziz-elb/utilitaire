@@ -15,30 +15,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, User, Mail } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Plus, Trash2, User, Mail, Edit } from "lucide-react";
 import { toast } from "sonner";
 import { getMembres } from "@/services/membreService";
-import api from "@/services/api";
-
+import { getRoleProjets } from "@/services/roleProjetService";
+import {
+  assignerMembre,
+  getMembresByProjet,
+  supprimerMembre,
+  changerRoleMembre,
+  type ProjetMembre,
+} from "@/services/membreProjetService";
+ 
 interface MembresTabProps {
   projetId: string;
-}
-
-interface ProjetMembre {
-  id: string;
-  membreEmail: string;
-  createurEmail: string;
-  dateCreation: string;
-  modificateurEmail?: string;
-  dateModification?: string;
 }
 
 export const MembresTab = ({ projetId }: MembresTabProps) => {
   const [membres, setMembres] = useState<ProjetMembre[]>([]);
   const [selectedMembreEmail, setSelectedMembreEmail] = useState("");
+  const [selectedRoleProjetId, setSelectedRoleProjetId] = useState("");
   const [loading, setLoading] = useState(false);
   const [addingMembre, setAddingMembre] = useState(false);
   const [tousMembres, setTousMembres] = useState<any[]>([]);
+  const [rolesProjet, setRolesProjet] = useState<any[]>([]);
+  
+  // Dialog pour changer le rôle
+  const [openRoleDialog, setOpenRoleDialog] = useState(false);
+  const [selectedMembreForRole, setSelectedMembreForRole] = useState<ProjetMembre | null>(null);
+  const [newRoleProjetId, setNewRoleProjetId] = useState("");
+  const [changingRole, setChangingRole] = useState(false);
 
   // Charger les membres du projet
   const loadMembresProjet = async () => {
@@ -46,8 +59,8 @@ export const MembresTab = ({ projetId }: MembresTabProps) => {
     
     try {
       setLoading(true);
-      const response = await api.get(`/projet-membres/projet/${projetId}`);
-      setMembres(response.data);
+      const membresData = await getMembresByProjet(projetId);
+      setMembres(membresData);
     } catch (error: any) {
       console.log("Erreur lors du chargement des membres:", error.message);
       if (error.response?.status === 404 || error.response?.status === 401) {
@@ -72,16 +85,35 @@ export const MembresTab = ({ projetId }: MembresTabProps) => {
     }
   };
 
+  // Charger tous les rôles de projet disponibles
+  const loadRolesProjet = async () => {
+    try {
+      const rolesData = await getRoleProjets();
+      setRolesProjet(rolesData);
+    } catch (error: any) {
+      console.log("Erreur lors du chargement des rôles de projet:", error.message);
+      toast.error("Erreur lors du chargement des rôles de projet");
+    }
+  };
+
   // Assigner un membre au projet
   const handleAssignerMembre = async () => {
-    if (!projetId || !selectedMembreEmail.trim()) return;
+    if (!projetId || !selectedMembreEmail.trim() || !selectedRoleProjetId) {
+      toast.error("Veuillez sélectionner un membre et un rôle");
+      return;
+    }
     
     try {
       setAddingMembre(true);
       
-      const response = await api.post(`/projet-membres/assigner?projetId=${projetId}&membreEmail=${selectedMembreEmail.trim()}`);
+      await assignerMembre({
+        projetId,
+        membreEmail: selectedMembreEmail.trim(),
+        roleProjetId: selectedRoleProjetId
+      });
       
       setSelectedMembreEmail("");
+      setSelectedRoleProjetId("");
       await loadMembresProjet();
       toast.success("Membre assigné avec succès");
     } catch (error: any) {
@@ -99,7 +131,7 @@ export const MembresTab = ({ projetId }: MembresTabProps) => {
   // Supprimer un membre du projet
   const handleSupprimerMembre = async (membreId: string) => {
     try {
-      await api.delete(`/projet-membres/${membreId}`);
+      await supprimerMembre(membreId);
       await loadMembresProjet();
       toast.success("Membre supprimé avec succès");
     } catch (error: any) {
@@ -112,10 +144,48 @@ export const MembresTab = ({ projetId }: MembresTabProps) => {
     }
   };
 
+  // Ouvrir le dialogue pour changer le rôle
+  const handleChangerRole = (membre: ProjetMembre) => {
+    setSelectedMembreForRole(membre);
+    setNewRoleProjetId(membre.roleProjetId || "");
+    setOpenRoleDialog(true);
+  };
+
+  // Confirmer le changement de rôle
+  const handleConfirmerChangementRole = async () => {
+    if (!selectedMembreForRole || !newRoleProjetId) {
+      toast.error("Veuillez sélectionner un nouveau rôle");
+      return;
+    }
+
+    try {
+      setChangingRole(true);
+      await changerRoleMembre(selectedMembreForRole.id, {
+        nouveauRoleProjetId: newRoleProjetId
+      });
+      
+      setOpenRoleDialog(false);
+      setSelectedMembreForRole(null);
+      setNewRoleProjetId("");
+      await loadMembresProjet();
+      toast.success("Rôle modifié avec succès");
+    } catch (error: any) {
+      console.log("Erreur lors du changement de rôle:", error.message);
+      if (error.response?.status === 404 || error.response?.status === 401) {
+        toast.info("Fonctionnalité en cours de développement");
+      } else {
+        toast.error("Erreur lors du changement de rôle");
+      }
+    } finally {
+      setChangingRole(false);
+    }
+  };
+
   // Charger les données au montage
   useEffect(() => {
     loadMembresProjet();
     loadTousMembres();
+    loadRolesProjet();
   }, [projetId]);
 
   // Fonction pour formater la date
@@ -128,11 +198,25 @@ export const MembresTab = ({ projetId }: MembresTabProps) => {
     });
   };
 
-  // Fonction pour obtenir les initiales
-  const getInitiales = (nom: string, prenom: string): string => {
-    const initialeNom = nom ? nom[0] : '';
-    const initialePrenom = prenom ? prenom[0] : '';
-    return (initialePrenom + initialeNom).toUpperCase();
+  // Fonction pour obtenir le nom du membre
+  const getMembreNom = (membreEmail: string) => {
+    const membre = tousMembres.find(m => m.email === membreEmail);
+    return membre?.nomPrenom ?? membreEmail;
+  };
+
+  // Fonction pour obtenir les initiales du membre
+  const getMembreInitiales = (membreEmail: string) => {
+    const membre = tousMembres.find(m => m.email === membreEmail);
+    if (membre?.nomPrenom) {
+      return membre.nomPrenom.substring(0, 2).toUpperCase();
+    }
+    return membreEmail.substring(0, 2).toUpperCase();
+  };
+
+  // Fonction pour obtenir le nom du rôle
+  const getRoleNom = (roleId: string) => {
+    const role = rolesProjet.find(r => r.id === roleId);
+    return role?.libelle ?? 'Rôle inconnu';
   };
 
   return (
@@ -141,7 +225,7 @@ export const MembresTab = ({ projetId }: MembresTabProps) => {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Assigner un membre</CardTitle>
-          <CardDescription>Ajouter un nouveau membre au projet</CardDescription>
+          <CardDescription>Ajouter un nouveau membre au projet avec un rôle spécifique</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
@@ -162,9 +246,26 @@ export const MembresTab = ({ projetId }: MembresTabProps) => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex-1">
+              <Select
+                value={selectedRoleProjetId}
+                onValueChange={setSelectedRoleProjetId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un rôle..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {rolesProjet.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                        <span>{role.libelle}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <Button 
               onClick={handleAssignerMembre}
-              disabled={!selectedMembreEmail.trim() || addingMembre}
+              disabled={!selectedMembreEmail.trim() || !selectedRoleProjetId || addingMembre}
               className="bg-inwi-purple/80 hover:bg-inwi-purple"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -197,19 +298,19 @@ export const MembresTab = ({ projetId }: MembresTabProps) => {
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                       <span className="text-sm font-medium text-blue-700">
-                        {membre.membreEmail.substring(0, 2).toUpperCase()}
+                        {getMembreInitiales(membre.membreEmail)}
                       </span>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">
-                          {membre.membreEmail}
+                          {getMembreNom(membre.membreEmail)}
                         </span>
-                        <Badge variant="outline" className="text-xs">
-                          Membre
+                        <Badge variant="outline" className="text-xs bg-green-100 text-green-700">
+                          {membre.roleProjet?.libelle ?? getRoleNom(membre.roleProjetId ?? "")}
                         </Badge>
                         <Badge variant="secondary" className="text-xs">
-                          {formatDate(membre.dateCreation)}
+                          {formatDate(membre.dateAffectation ?? membre.dateCreation ?? "")}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -218,20 +319,80 @@ export const MembresTab = ({ projetId }: MembresTabProps) => {
                       </div>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleSupprimerMembre(membre.id)}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleChangerRole(membre)}
+                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSupprimerMembre(membre.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog pour changer le rôle */}
+      <Dialog open={openRoleDialog} onOpenChange={setOpenRoleDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Changer le rôle du membre</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Membre</label>
+              <p className="text-sm text-muted-foreground">
+                {selectedMembreForRole?.membreEmail}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Nouveau rôle</label>
+              <Select
+                value={newRoleProjetId}
+                onValueChange={setNewRoleProjetId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un nouveau rôle..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {rolesProjet.map((role) => (
+                    <SelectItem key={role.id} value={role.id}>
+                        <span>{role.libelle}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setOpenRoleDialog(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleConfirmerChangementRole}
+              disabled={!newRoleProjetId || changingRole}
+              className="bg-inwi-purple/80 hover:bg-inwi-purple"
+            >
+              {changingRole ? "Modification..." : "Confirmer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }; 

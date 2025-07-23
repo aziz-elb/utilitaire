@@ -17,7 +17,8 @@ import {
   Target,
   CheckCircle,
   XCircle,
-  Handshake
+  Handshake,
+  Star
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -26,33 +27,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
-import { getTemplates, getEtapeModeles } from "@/services/templateService";
+import { getTemplates, getEtapeTemplates } from "@/services/templateService";
 
 // Helper functions pour récupérer les noms des templates et étapes
 const getTemplateName = (id: string, templates: any[]): string => {
   const template = templates.find((t: any) => t.id === id);
-  return template?.description || "Template inconnu";
+  return template?.libelle || "Template inconnu";
 };
 
 const getEtapeName = (id: string, etapes: any[]): string => {
   const etape = etapes.find((e: any) => e.id === id);
-  return etape?.description || "Étape inconnue";
+  return etape?.libelle || "Étape inconnue";
 };
 
 // Fonction pour obtenir la couleur du badge de complexité
-const getComplexityColor = (niveau: string) => {
-  switch (niveau?.toUpperCase()) {
-    case "FAIBLE":
-      return "bg-green-100 text-green-800";
-    case "MOYEN":
-      return "bg-yellow-100 text-yellow-800";
-    case "ÉLEVÉ":
-    case "ELEVE":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
 
 // Fonction pour formater les dates
 const formatDate = (dateString: string) => {
@@ -62,6 +50,24 @@ const formatDate = (dateString: string) => {
     month: "2-digit",
     year: "numeric"
   });
+};
+
+const renderStars = (count: number) => {
+  return (
+    <div className="flex items-center">
+      {[...Array(5)].map((_, i) => (
+        <Star
+          key={i}
+          size={16}
+          className={
+            i < count
+              ? "fill-current text-amber-500 "
+              : "fill-current text-gray-200 "
+          }
+        />
+      ))}
+    </div>
+  );
 };
 
 type ProjectCardsProps = {
@@ -97,7 +103,7 @@ export const ProjectCards = ({
       try {
         const [templatesData, etapesData] = await Promise.all([
           getTemplates(),
-          getEtapeModeles()
+          getEtapeTemplates()
         ]);
         setTemplates(templatesData);
         setEtapes(etapesData);
@@ -115,31 +121,31 @@ export const ProjectCards = ({
         ? project.titre.toLowerCase().includes(searchTerm.toLowerCase())
         : true;
 
-      // Filtre par type (si applicable)
-      const matchesType = filters.type === "all" || true; // Temporairement désactivé
+        const matchesType = filters.type === "all" || project.typeProjetId === filters.type; // Temporairement désactivé
 
-      // Filtre par statut (si applicable)
-      const matchesStatus = filters.status === "all" || true; // Temporairement désactivé
-
-      // Filtre par complexité
-      const matchesComplexity =
-        filters.complexity === "all" ||
-        project.niveauComplexite === filters.complexity;
-
-      // Filtre par progression
-      let matchesProgress = true;
-      if (filters.progress !== "all") {
-        const [min, max] = filters.progress.split("-").map(Number);
-        matchesProgress =
-          project.progressionPct >= min && project.progressionPct <= max;
-      }
-
-      // Filtre par passation
-      let matchesPassation = true;
-      if (filters.passation !== "all") {
-        matchesPassation =
-          project.passationTermineeYn === (filters.passation === "true");
-      }
+        // Filtre par statut (si applicable)
+        const matchesStatus = filters.status === "all" || project.statutProjetId === filters.status; // Temporairement désactivé
+  
+        // Filtre par complexité
+        const matchesComplexity =
+          filters.complexity === "all" ||
+          project.niveauComplexite == filters.complexity;
+  
+  
+        // Filtre par progression
+        let matchesProgress = true;
+        if (filters.progress !== "all") {
+          const [min, max] = filters.progress.split("-").map(Number);
+          matchesProgress =
+            project.progressionPct >= min && project.progressionPct <= max;
+        }
+  
+        // Filtre par passation
+        let matchesPassation = true;
+        if (filters.passation !== "all") {
+          matchesPassation =
+            project.passationTermineeYn === (filters.passation === "true");
+        }
 
       return (
         matchesSearch &&
@@ -173,10 +179,11 @@ export const ProjectCards = ({
                 </CardTitle>
                 <div className="flex flex-wrap gap-2 mt-2">
                   <Badge variant="outline" className="bg-blue-50 text-blue-700 text-xs">
-                    {getTemplateName(project.modeleProjetId, templates)}
+                  {project.typeProjetLibelle}
+                    
                   </Badge>
                   <Badge variant="outline" className="bg-purple-50 text-purple-700 text-xs">
-                    {getEtapeName(project.etapeModeleId, etapes)}
+                  {project.statutProjetLibelle}
                   </Badge>
                 </div>
               </div>
@@ -224,12 +231,9 @@ export const ProjectCards = ({
             {/* Complexité */}
             <div className="flex justify-between items-center">
               <span className="text-sm">Complexité</span>
-              <Badge 
-                variant="outline" 
-                className={`text-xs ${getComplexityColor(project.niveauComplexite)}`}
-              >
-                {project.niveauComplexite}
-              </Badge>
+              {renderStars(project.niveauComplexite)}
+            
+              
             </div>
 
             {/* Dates avec badges et icônes */}

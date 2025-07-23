@@ -11,8 +11,13 @@ export function cn(...inputs: ClassValue[]) {
  * @example getInitials("john", "doe") → "JD"
  */
 export const getInitials = (prenom: string, nom: string): string => {
-  const firstLetter = (str: string) => str.charAt(0).toUpperCase();
-  return `${firstLetter(prenom)}${firstLetter(nom)}`;
+  const firstLetter = (str?: string) => (str && str.length > 0 ? str.charAt(0).toUpperCase() : "");
+  const p = firstLetter(prenom);
+  const n = firstLetter(nom);
+  if (p && n) return `${p}${n}`;
+  if (p) return p;
+  if (n) return n;
+  return "?";
 };
 
 

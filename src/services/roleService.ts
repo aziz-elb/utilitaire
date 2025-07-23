@@ -34,8 +34,8 @@ export const updateRole = async (roleName: string, data: Partial<RoleInput>): Pr
   return response.data;
 };
 
-export const deleteRole = async (roleId: string): Promise<void> => {
-  await api.delete(`${BASE_URL}/${roleId}`);
+export const deleteRole = async (roleName: string): Promise<void> => {
+  await api.delete(`${BASE_URL}/${roleName}`);
 };
 
 export default {

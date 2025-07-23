@@ -1,12 +1,18 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import { login as apiLogin } from '../services/authService';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import type { ReactNode } from "react";
+import { login as apiLogin } from "../services/authService";
+import { getProfileinfo } from "@/services/Profile";
 
-interface TestUser {
-  prenom: string;
-  nom: string;
-  avatar: string;
+export interface UserProfile {
+  nomPrenom: string;
   email: string;
+  telephone: string;
+  profilePictureUrl: string;
+  interneYn: boolean;
+  role: string;
+  typeMembreId: string;
+  entiteId: string;
+  fonctionId: string;
 }
 
 interface AuthContextType {
@@ -14,29 +20,33 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
-  user: TestUser | null;
+  user: UserProfile | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(() =>
+    localStorage.getItem("token")
+  );
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const isAuthenticated = !!token;
-  // Test user (hardcoded for now)
-  const testUser: TestUser = {
-    prenom: 'Test',
-    nom: 'User',
-    avatar: 'https://ui-avatars.com/api/?name=Test+User',
-    email: 'usertest@gmail.com',
-  };
-  const user = isAuthenticated ? testUser : null;
-
   useEffect(() => {
-    if (token) {
-      localStorage.setItem('token', token);
-    } else {
-      localStorage.removeItem('token');
-    }
+    const fetchProfile = async () => {
+      if (token) {
+        localStorage.setItem("token", token);
+        try {
+          const profileData: UserProfile = await getProfileinfo();
+          setProfile(profileData);
+        } catch (e) {
+          setProfile(null);
+        }
+      } else {
+        localStorage.removeItem("token");
+        setProfile(null);
+      }
+    };
+    fetchProfile();
   }, [token]);
 
   const login = async (email: string, password: string) => {
@@ -44,7 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const res = await apiLogin(email, password);
       setToken(res.access_token);
     } catch (e: any) {
-      throw new Error(e.response?.data?.message || 'Erreur de connexion');
+      throw new Error(e.response?.data?.message || "Erreur de connexion");
     }
   };
 
@@ -53,7 +63,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ token, login, logout, isAuthenticated, user }}>
+    <AuthContext.Provider
+      value={{ token, login, logout, isAuthenticated, user: profile }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -61,6 +73,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
-}; 
+};

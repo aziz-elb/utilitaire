@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const baseURL = '/api'; // Use proxy for CORS
+// Remplace cette URL par l'URL publique de ton backend
+const baseURL = 'http://localhost:9000/api';
 
 const api = axios.create({
   baseURL,
@@ -14,7 +15,7 @@ const api = axios.create({
 // Ajout du token Bearer automatiquement
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  console.log('Token présent:', !!token, 'URL:', config.url, 'Method:', config.method);
+  // console.log('Token présent:', !!token, 'URL:', config.url, 'Method:', config.method);
   if (token) {
     config.headers = config.headers || {};
     config.headers['Authorization'] = `Bearer ${token}`;

@@ -13,7 +13,7 @@ export default function MainLayout() {
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
+        {/* <Header /> */}
         <main className="flex-1 overflow-auto p-6">
           <Outlet />
         </main>

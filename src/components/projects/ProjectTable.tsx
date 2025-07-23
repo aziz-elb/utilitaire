@@ -25,36 +25,34 @@ import {
   CheckCircle,
   XCircle,
   FileText,
-  Handshake
+  Handshake,
+  Star
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { getTemplates, getEtapeModeles } from "@/services/templateService";
+import { getTemplates, getEtapeTemplates } from "@/services/templateService";
+import type { TemplateProjet, EtapeTemplate } from "@/services/templateService";
+import { Rating, RatingButton } from '@/components/ui/shadcn-io/rating';
 
-// Helper functions pour récupérer les noms des templates et étapes
-const getTemplateName = (id: string, templates: any[]): string => {
-  const template = templates.find((t: any) => t.id === id);
-  return template?.description || "Template inconnu";
+const renderStars = (count: number) => {
+  return (
+    <div className="flex items-center">
+      {[...Array(5)].map((_, i) => (
+        <Star
+          key={i}
+          size={16}
+          className={
+            i < count
+              ? "fill-current text-amber-500 "
+              : "fill-current text-gray-200 "
+          }
+        />
+      ))}
+    </div>
+  );
 };
 
-const getEtapeName = (id: string, etapes: any[]): string => {
-  const etape = etapes.find((e: any) => e.id === id);
-  return etape?.description || "Étape inconnue";
-};
 
-// Fonction pour obtenir la couleur du badge de complexité
-const getComplexityColor = (niveau: string) => {
-  switch (niveau?.toUpperCase()) {
-    case "FAIBLE":
-      return "bg-green-100 text-green-800";
-    case "MOYEN":
-      return "bg-yellow-100 text-yellow-800";
-    case "ÉLEVÉ":
-    case "ELEVE":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
-};
+
 
 // Fonction pour formater les dates
 const formatDate = (dateString: string) => {
@@ -83,32 +81,16 @@ export const ProjectTable = ({
   type_projet,
   statut_projet,
   loading,
-  refreshKey,
   setCurrentProject,
   setOpenDeleteDialog,
   searchTerm,
   filters,
 }: ProjectTableProps) => {
   const [filteredProjects, setFilteredProjects] = useState<any[]>([]);
-  const [templates, setTemplates] = useState<any[]>([]);
-  const [etapes, setEtapes] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<TemplateProjet[]>([]);
+  const [etapes, setEtapes] = useState<EtapeTemplate[]>([]);
 
-  // Charger les templates et étapes
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [templatesData, etapesData] = await Promise.all([
-          getTemplates(),
-          getEtapeModeles()
-        ]);
-        setTemplates(templatesData);
-        setEtapes(etapesData);
-      } catch (error) {
-        console.error("Erreur lors du chargement des templates/étapes:", error);
-      }
-    };
-    fetchData();
-  }, []);
+
 
   useEffect(() => {
     const filtered = projets.filter((project) => {
@@ -118,15 +100,16 @@ export const ProjectTable = ({
         : true;
 
       // Filtre par type (si applicable)
-      const matchesType = filters.type === "all" || true; // Temporairement désactivé
+      const matchesType = filters.type === "all" || project.typeProjetId === filters.type; // Temporairement désactivé
 
       // Filtre par statut (si applicable)
-      const matchesStatus = filters.status === "all" || true; // Temporairement désactivé
+      const matchesStatus = filters.status === "all" || project.statutProjetId === filters.status; // Temporairement désactivé
 
       // Filtre par complexité
       const matchesComplexity =
         filters.complexity === "all" ||
-        project.niveauComplexite === filters.complexity;
+        project.niveauComplexite == filters.complexity;
+
 
       // Filtre par progression
       let matchesProgress = true;
@@ -165,8 +148,8 @@ export const ProjectTable = ({
           <TableRow>
             <TableHead>ID</TableHead>
             <TableHead>Titre</TableHead>
-            <TableHead>Template</TableHead>
-            <TableHead>Étape</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Statut</TableHead>
             <TableHead>Date Début</TableHead>
             <TableHead>Date Fin</TableHead>
             <TableHead>Date Cible</TableHead>
@@ -193,12 +176,13 @@ export const ProjectTable = ({
               </TableCell>
               <TableCell>
                 <Badge variant="outline" className="bg-blue-50 text-blue-700">
-                  {getTemplateName(project.modeleProjetId, templates)}
+                  {project.typeProjetLibelle}
                 </Badge>
               </TableCell>
               <TableCell>
                 <Badge variant="outline" className="bg-purple-50 text-purple-700">
-                  {getEtapeName(project.etapeModeleId, etapes)}
+                  {project.statutProjetLibelle}
+                  
                 </Badge>
               </TableCell>
               <TableCell>
@@ -229,12 +213,7 @@ export const ProjectTable = ({
                 </div>
               </TableCell>
               <TableCell>
-                <Badge 
-                  variant="outline" 
-                  className={getComplexityColor(project.niveauComplexite)}
-                >
-                  {project.niveauComplexite}
-                </Badge>
+                {renderStars(project.niveauComplexite)}
               </TableCell>
               <TableCell>
                 <Badge 

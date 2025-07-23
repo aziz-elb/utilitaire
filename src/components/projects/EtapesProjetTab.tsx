@@ -44,11 +44,12 @@ import {
   createEtapeProjet,
   updateEtapeProjet,
   deleteEtapeProjet,
-  updateEtapesOrder,
   type EtapeProjet,
   type EtapeProjetInput,
   type EtapeProjetUpdate,
 } from "@/services/etapeProjetService";
+
+
 
 interface EtapesProjetTabProps {
   projetId: string;
@@ -66,22 +67,21 @@ export const EtapesProjetTab = ({ projetId }: EtapesProjetTabProps) => {
     titre: "",
     description: "",
     progressionPct: 0,
-    ordre: 1,
-    priorite: "MOYEN" as 'HAUTE' | 'MOYEN' | 'BAS',
+    ordre_execution: 1,
+    priorite: "MOYEN",
     dateDebut: "",
     dateFin: "",
-    statutId: "",
+    statutEtapeId: "",
     typeEtapeId: "",
   });
 
   // Charger les étapes du projet
   const loadEtapes = async () => {
     if (!projetId) return;
-    
     try {
       setLoading(true);
       const etapesData = await getEtapesProjet(projetId);
-      setEtapes(etapesData.sort((a, b) => a.ordre - b.ordre));
+      setEtapes(etapesData);
     } catch (error: any) {
       console.log("Erreur lors du chargement des étapes:", error.message);
       if (error.response?.status === 404 || error.response?.status === 401) {
@@ -117,11 +117,11 @@ export const EtapesProjetTab = ({ projetId }: EtapesProjetTabProps) => {
       titre: "",
       description: "",
       progressionPct: 0,
-      ordre: etapes.length + 1,
+      ordre_execution: etapes.length + 1,
       priorite: "MOYEN",
       dateDebut: "",
       dateFin: "",
-      statutId: "",
+      statutEtapeId: "",
       typeEtapeId: "",
     });
     setOpenDialog(true);
@@ -133,60 +133,57 @@ export const EtapesProjetTab = ({ projetId }: EtapesProjetTabProps) => {
     setFormData({
       titre: etape.titre,
       description: etape.description,
-      progressionPct: etape.progressionPct,
-      ordre: etape.ordre,
-      priorite: etape.priorite,
-      dateDebut: etape.dateDebut,
-      dateFin: etape.dateFin,
-      statutId: etape.statutId,
-      typeEtapeId: etape.typeEtapeId,
+      progressionPct: etape.progressionPct ?? 0,
+      ordre_execution: etape.ordre_execution ?? 1,
+      priorite: etape.priorite ?? "MOYEN",
+      dateDebut: etape.dateDebut ?? "",
+      dateFin: etape.dateFin ?? "",
+      statutEtapeId: etape.statutEtapeId ?? "",
+      typeEtapeId: etape.typeEtapeId ?? "",
     });
     setOpenDialog(true);
   };
 
   // Sauvegarder l'étape (créer ou mettre à jour)
   const handleSaveEtape = async () => {
-    if (!formData.titre.trim() || !formData.statutId || !formData.typeEtapeId) {
+    if (!formData.titre.trim() || !formData.statutEtapeId || !formData.typeEtapeId) {
       toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
-
     try {
       setAddingEtape(true);
-
       if (editingEtape) {
         // Mise à jour
-        const updateData: EtapeProjetUpdate = {
+        const updateData = {
           titre: formData.titre,
           description: formData.description,
           progressionPct: formData.progressionPct,
-          ordre: formData.ordre,
+          ordre_execution: formData.ordre_execution,
           priorite: formData.priorite,
           dateDebut: formData.dateDebut,
           dateFin: formData.dateFin,
-          statutId: formData.statutId,
+          statutId: formData.statutEtapeId, // <- important pour l'API
           typeEtapeId: formData.typeEtapeId,
         };
         await updateEtapeProjet(editingEtape.id, updateData);
         toast.success("Étape mise à jour avec succès");
       } else {
         // Création
-        const newEtape: EtapeProjetInput = {
+        const newEtape = {
           projetId: projetId,
           titre: formData.titre,
           description: formData.description,
           progressionPct: formData.progressionPct,
-          ordre: formData.ordre,
+          ordre_execution: formData.ordre_execution,
           priorite: formData.priorite,
           dateDebut: formData.dateDebut,
           dateFin: formData.dateFin,
-          statutId: formData.statutId,
+          statutId: formData.statutEtapeId, // <- important pour l'API
           typeEtapeId: formData.typeEtapeId,
         };
         await createEtapeProjet(newEtape);
         toast.success("Étape créée avec succès");
       }
-
       setOpenDialog(false);
       await loadEtapes();
     } catch (error: any) {
@@ -217,43 +214,10 @@ export const EtapesProjetTab = ({ projetId }: EtapesProjetTabProps) => {
     }
   };
 
-  // Changer l'ordre des étapes
-  const handleOrderChange = async (etapeId: string, direction: "up" | "down") => {
-    const currentIndex = etapes.findIndex(etape => etape.id === etapeId);
-    if (currentIndex === -1) return;
-
-    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
-    if (newIndex < 0 || newIndex >= etapes.length) return;
-
-    const newEtapes = [...etapes];
-    [newEtapes[currentIndex], newEtapes[newIndex]] = [newEtapes[newIndex], newEtapes[currentIndex]];
-
-    // Mettre à jour les ordres
-    const updatedEtapes = newEtapes.map((etape, index) => ({
-      ...etape,
-      ordre: index + 1,
-    }));
-
-    setEtapes(updatedEtapes);
-
-    try {
-      // Mettre à jour l'ordre des deux étapes échangées
-      const etape1 = updatedEtapes[currentIndex];
-      const etape2 = updatedEtapes[newIndex];
-      
-      await Promise.all([
-        updateEtapeProjet(etape1.id, { ordre: etape1.ordre }),
-        updateEtapeProjet(etape2.id, { ordre: etape2.ordre })
-      ]);
-      
-      toast.success("Ordre mis à jour avec succès");
-    } catch (error: any) {
-      console.log("Erreur lors de la mise à jour de l'ordre:", error.message);
-      toast.error("Erreur lors de la mise à jour de l'ordre");
-      // Recharger les étapes en cas d'erreur
-      await loadEtapes();
-    }
-  };
+  // Changer l'ordre des étapes (désactivé)
+  // const handleOrderChange = async (etapeId: string, direction: "up" | "down") => {
+  //   // Désactivé avec la nouvelle API
+  // };
 
   // Charger les données au montage
   useEffect(() => {
@@ -274,13 +238,13 @@ export const EtapesProjetTab = ({ projetId }: EtapesProjetTabProps) => {
   // Fonction pour obtenir le nom du statut
   const getStatutNom = (statutId: string) => {
     const statut = statuts.find(s => s.id === statutId);
-    return statut ? statut.description : 'Statut inconnu';
+    return statut ? statut.libelle : 'Statut inconnu';
   };
 
   // Fonction pour obtenir le nom du type d'étape
   const getTypeEtapeNom = (typeId: string) => {
     const type = typesEtape.find(t => t.id === typeId);
-    return type ? type.description : 'Type inconnu';
+    return type ? type.libelle : 'Type inconnu';
   };
 
   // Fonction pour obtenir la couleur de la priorité
@@ -326,49 +290,29 @@ export const EtapesProjetTab = ({ projetId }: EtapesProjetTabProps) => {
             </div>
           ) : (
             <div className="space-y-4">
-              {etapes.map((etape, index) => (
+              {etapes.map((etape) => (
                 <div key={etape.id} className="border rounded-lg p-4 hover:bg-gray-50">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3 flex-1">
-                      <div className="flex flex-col gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOrderChange(etape.id, "up")}
-                          disabled={index === 0}
-                          className="h-6 w-6 p-0"
-                        >
-                          <ChevronUp className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOrderChange(etape.id, "down")}
-                          disabled={index === etapes.length - 1}
-                          className="h-6 w-6 p-0"
-                        >
-                          <ChevronDown className="h-3 w-3" />
-                        </Button>
-                      </div>
                       
                       <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <span className="text-sm font-medium text-blue-700">{etape.ordre}</span>
+                        <span className="text-sm font-medium text-blue-700">{etape.ordre_execution}</span>
                       </div>
                       
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center gap-2 flex-wrap">
                           <h4 className="font-medium">{etape.titre}</h4>
-                          <Badge variant="outline" className="text-xs">
-                            {getTypeEtapeNom(etape.typeEtapeId)}
+                          <Badge variant="outline" className="text-xs bg-green-100 text-green-700">
+                            {getTypeEtapeNom(etape.typeEtapeId ?? "")}
                           </Badge>
                           <Badge 
                             variant="secondary" 
-                            className={`text-xs ${getPrioriteColor(etape.priorite)}`}
+                            className={`text-xs ${getPrioriteColor(etape.priorite ?? "")}`}
                           >
-                            {etape.priorite}
+                            {etape.priorite ?? ""}
                           </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {getStatutNom(etape.statutId)}
+                          <Badge variant="outline" className="text-xs bg-red-100 text-red-700">
+                            {getStatutNom(etape.statutEtapeId ?? "")}
                           </Badge>
                         </div>
                         
@@ -378,11 +322,11 @@ export const EtapesProjetTab = ({ projetId }: EtapesProjetTabProps) => {
                         
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>Progression: {etape.progressionPct}%</span>
+                            <span>Progression: {etape.progressionPct ?? 0}%</span>
                             <span>•</span>
-                            <span>Du {formatDate(etape.dateDebut)} au {formatDate(etape.dateFin)}</span>
+                            <span>Du {formatDate(etape.dateDebut ?? "")} au {formatDate(etape.dateFin ?? "")}</span>
                           </div>
-                          <Progress value={etape.progressionPct} className="h-2" />
+                          <Progress value={etape.progressionPct ?? 0} className="h-2" />
                         </div>
                       </div>
                     </div>
@@ -425,6 +369,30 @@ export const EtapesProjetTab = ({ projetId }: EtapesProjetTabProps) => {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="projetId">Projet ID</Label>
+                <Input
+                  id="projetId"
+                  value={projetId}
+                  readOnly
+                  className="bg-gray-100 cursor-not-allowed"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="ordre_execution">Ordre d'exécution</Label>
+                <Input
+                  id="ordre_execution"
+                  type="number"
+                  min="1"
+                  value={formData.ordre_execution}
+                  onChange={(e) =>
+                    setFormData({ ...formData, ordre_execution: parseInt(e.target.value) || 1 })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label htmlFor="titre">Titre *</Label>
                 <Input
                   id="titre"
@@ -436,15 +404,14 @@ export const EtapesProjetTab = ({ projetId }: EtapesProjetTabProps) => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="ordre">Ordre</Label>
+                <Label htmlFor="priorite">Priorité</Label>
                 <Input
-                  id="ordre"
-                  type="number"
-                  min="1"
-                  value={formData.ordre}
+                  id="priorite"
+                  value={formData.priorite}
                   onChange={(e) =>
-                    setFormData({ ...formData, ordre: parseInt(e.target.value) || 1 })
+                    setFormData({ ...formData, priorite: e.target.value })
                   }
+                  placeholder="Priorité (ex: Basse, Moyenne, Haute)"
                 />
               </div>
             </div>
@@ -460,69 +427,6 @@ export const EtapesProjetTab = ({ projetId }: EtapesProjetTabProps) => {
                 }
                 rows={3}
               />
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="priorite">Priorité</Label>
-                <Select
-                  value={formData.priorite}
-                  onValueChange={(value: 'HAUTE' | 'MOYEN' | 'BAS') =>
-                    setFormData({ ...formData, priorite: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner la priorité" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="HAUTE">Haute</SelectItem>
-                    <SelectItem value="MOYEN">Moyenne</SelectItem>
-                    <SelectItem value="BAS">Basse</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="statutId">Statut *</Label>
-                <Select
-                  value={formData.statutId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, statutId: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner le statut" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statuts.map((statut) => (
-                      <SelectItem key={statut.id} value={statut.id}>
-                        {statut.description}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="typeEtapeId">Type d'étape *</Label>
-                <Select
-                  value={formData.typeEtapeId}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, typeEtapeId: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner le type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {typesEtape.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>
-                        {type.description}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -583,10 +487,53 @@ export const EtapesProjetTab = ({ projetId }: EtapesProjetTabProps) => {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="statutEtapeId">Statut *</Label>
+                <Select
+                  value={formData.statutEtapeId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, statutEtapeId: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner le statut" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statuts.map((statut) => (
+                      <SelectItem key={statut.id} value={statut.id}>
+                        {statut.libelle}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="typeEtapeId">Type d'étape *</Label>
+                <Select
+                  value={formData.typeEtapeId}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, typeEtapeId: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner le type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {typesEtape.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        {type.libelle}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="progression">Progression ({formData.progressionPct}%)</Label>
               <Input
-                type="range"
+                type="number"
                 id="progression"
                 min="0"
                 max="100"
@@ -608,7 +555,7 @@ export const EtapesProjetTab = ({ projetId }: EtapesProjetTabProps) => {
             </Button>
             <Button
               onClick={handleSaveEtape}
-              disabled={addingEtape || !formData.titre.trim() || !formData.statutId || !formData.typeEtapeId}
+              disabled={addingEtape || !formData.titre.trim() || !formData.statutEtapeId || !formData.typeEtapeId}
               className="bg-inwi-purple/80 hover:bg-inwi-purple"
             >
               {addingEtape ? "Sauvegarde..." : editingEtape ? "Mettre à jour" : "Créer"}

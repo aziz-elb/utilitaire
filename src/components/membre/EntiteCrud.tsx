@@ -130,15 +130,15 @@ export default function EntiteCrud() {
   // Modifier une entité existante
   const handleEditEntite = async () => {
     if (!currentEntite) return;
-
+ 
     try {
       const updated = await updateEntite({
-        entiteId: currentEntite.entiteId,
+        id: currentEntite.id,
         titre: titre.trim(),
         description: description.trim(),
       });
       const updatedEntites = entites.map((entite) =>
-        entite.entiteId === currentEntite.entiteId ? updated : entite
+        entite.id === currentEntite.id ? updated : entite
       );
       setEntites(updatedEntites);
       setOpenEditDialog(false);
@@ -155,9 +155,9 @@ export default function EntiteCrud() {
     if (!currentEntite) return;
 
     try {
-      await deleteEntite(currentEntite.entiteId);
+      await deleteEntite(currentEntite.id);
       const filteredEntites = entites.filter(
-        (entite) => entite.entiteId !== currentEntite.entiteId
+        (entite) => entite.id !== currentEntite.id
       );
       setEntites(filteredEntites);
       setOpenDeleteDialog(false);
@@ -225,8 +225,8 @@ export default function EntiteCrud() {
                   </TableRow>
                 ) : (
                   entites.map((entite) => (
-                    <TableRow key={entite.entiteId}>
-                      <TableCell>{entite.entiteId}</TableCell>
+                    <TableRow key={entite.id}>
+                      <TableCell>{entite.id}</TableCell>
                       <TableCell>{entite.titre}</TableCell>
                       <TableCell>
                         {truncateText(entite.description, 50)}
@@ -283,7 +283,7 @@ export default function EntiteCrud() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {entites.map((entite) => (
                 <Card
-                  key={entite.entiteId}
+                  key={entite.id}
                   className="hover:shadow-lg transition-shadow"
                 >
                   <CardHeader>
@@ -322,7 +322,7 @@ export default function EntiteCrud() {
                         {truncateText(entite.description, 100)}
                       </div>
                       <div className="flex items-center text-xs text-gray-500">
-                        <Badge variant="secondary">ID: {entite.entiteId}</Badge>
+                        <Badge variant="secondary">ID: {entite.id}</Badge>
                       </div>
                     </div>
                   </CardContent>
@@ -391,7 +391,7 @@ export default function EntiteCrud() {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">ID</Label>
-              <div className="col-span-3">{currentEntite?.entiteId}</div>
+              <div className="col-span-3">{currentEntite?.id}</div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Titre</Label>
